@@ -1,4 +1,5 @@
 import DashboardLayout from '@/components/DashboardLayout';
+import Image from 'next/image';
 import { Partner } from '@/types';
 
 // Моковые данные для партнеров
@@ -175,9 +176,11 @@ export default function PartnersPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center">
                     {partner.logoUrl ? (
-                      <img
+                      <Image
                         src={partner.logoUrl}
                         alt={partner.name}
+                        width={48}
+                        height={48}
                         className="w-12 h-12 rounded-lg object-cover"
                       />
                     ) : (

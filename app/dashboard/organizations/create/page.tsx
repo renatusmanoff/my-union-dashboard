@@ -48,7 +48,7 @@ export default function CreateOrganizationPage() {
       // Здесь будет API запрос для создания организации
       await new Promise(resolve => setTimeout(resolve, 1000)); // Имитация запроса
       router.push('/dashboard/organizations?message=created');
-    } catch (err) {
+    } catch {
       setError('Произошла ошибка при создании организации');
     } finally {
       setIsLoading(false);

@@ -1,5 +1,5 @@
 // Типы пользователей и ролей
-export type UserRole = 'ADMIN' | 'CENTRAL_COMMITTEE' | 'REGIONAL' | 'LOCAL' | 'PRIMARY';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'CENTRAL_COMMITTEE' | 'REGIONAL' | 'LOCAL' | 'PRIMARY' | 'MEMBER';
 
 export interface User {
   id: string;
@@ -12,6 +12,10 @@ export interface User {
   organizationId: string;
   organizationName: string;
   avatar?: string;
+  isActive: boolean;
+  emailVerified: boolean;
+  membershipValidated: boolean; // Для членов профсоюза
+  lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }

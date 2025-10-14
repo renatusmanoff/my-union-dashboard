@@ -87,6 +87,43 @@ npx prisma generate
 ```bash
 npm run dev
 ```
+Приложение всегда запускается на `http://localhost:3000/`
+
+**Примечание:** Порт и хост принудительно настроены в `package.json` для консистентности.
+
+### Деплой в Vercel
+
+1. **Подготовка к деплою:**
+```bash
+# Проверка сборки
+npm run build
+
+# Установка Vercel CLI (если не установлен)
+npm i -g vercel
+```
+
+2. **Деплой через Vercel CLI:**
+```bash
+# Логин в Vercel
+vercel login
+
+# Деплой проекта
+vercel
+
+# Для продакшена
+vercel --prod
+```
+
+3. **Настройка переменных окружения в Vercel:**
+   - Перейдите в Dashboard Vercel → Settings → Environment Variables
+   - Добавьте переменные:
+     - `DATABASE_URL` - URL базы данных Neon (prod)
+     - `JWT_SECRET` - секретный ключ JWT
+     - `NEXT_PUBLIC_API_URL` - URL вашего домена
+
+4. **Автоматический деплой:**
+   - Подключите GitHub репозиторий к Vercel
+   - При каждом push в main ветку будет автоматический деплой
 
 Откройте [http://localhost:3000](http://localhost:3000) в браузере.
 

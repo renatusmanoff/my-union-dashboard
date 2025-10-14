@@ -57,10 +57,29 @@ export default function RegisterPage() {
 
     setIsLoading(true);
     try {
-      // Здесь будет API запрос для проверки email
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Имитация запроса
-      setStep(2);
-    } catch (err) {
+      // Проверяем, существует ли пользователь с таким email
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: step1Data.email,
+          password: step1Data.password,
+          firstName: 'Пользователь', // Временные данные для первого шага
+          lastName: 'Новый',
+          phone: '+7 (999) 000-00-00'
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setStep(2);
+      } else {
+        setError(data.error || 'Произошла ошибка при регистрации');
+      }
+    } catch {
       setError('Произошла ошибка при регистрации');
     } finally {
       setIsLoading(false);
@@ -73,10 +92,29 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      // Здесь будет API запрос для завершения регистрации
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Имитация запроса
-      router.push('/login?message=registration-success');
-    } catch (err) {
+      // Обновляем данные пользователя
+      const response = await fetch('/api/auth/register', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          firstName: step2Data.firstName,
+          lastName: step2Data.lastName,
+          middleName: step2Data.middleName,
+          phone: step2Data.phone,
+          organizationId: step2Data.organizationId
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        router.push('/login?message=registration-success');
+      } else {
+        setError(data.error || 'Произошла ошибка при завершении регистрации');
+      }
+    } catch {
       setError('Произошла ошибка при завершении регистрации');
     } finally {
       setIsLoading(false);

@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { User, UserRole } from '@/types';
 
@@ -30,7 +31,7 @@ export function createToken(user: Omit<User, 'createdAt' | 'updatedAt'>): string
 export function verifyToken(token: string): JWTPayload | null {
   try {
     return jwt.verify(token, JWT_SECRET) as JWTPayload;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -38,7 +39,7 @@ export function verifyToken(token: string): JWTPayload | null {
 // Функция для получения пользователя из токена
 export async function getCurrentUser(): Promise<User | null> {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
 
     if (!token) {
@@ -66,7 +67,7 @@ export async function getCurrentUser(): Promise<User | null> {
       createdAt: new Date(),
       updatedAt: new Date()
     };
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -120,7 +121,7 @@ export function canAccessOrganization(
 }
 
 // Функция для установки токена в cookie
-export function setAuthToken(token: string): void {
+export function setAuthToken(): void {
   // В Next.js App Router используем cookies() для установки cookie
   // Это должно быть вызвано в Server Action или Route Handler
 }
@@ -129,4 +130,15 @@ export function setAuthToken(token: string): void {
 export function removeAuthToken(): void {
   // В Next.js App Router используем cookies() для удаления cookie
   // Это должно быть вызвано в Server Action или Route Handler
+}
+
+// Функция для хеширования пароля
+export async function hashPassword(password: string): Promise<string> {
+  const saltRounds = 10;
+  return await bcrypt.hash(password, saltRounds);
+}
+
+// Функция для проверки пароля
+export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+  return await bcrypt.compare(password, hashedPassword);
 }

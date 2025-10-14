@@ -19,15 +19,23 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // Здесь будет API запрос для аутентификации
-      // Пока используем моковые данные
-      if (formData.email === 'admin@example.com' && formData.password === 'password') {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
         // Успешная аутентификация
         router.push('/dashboard');
       } else {
-        setError('Неверный email или пароль');
+        setError(data.error || 'Произошла ошибка при входе');
       }
-    } catch (err) {
+    } catch {
       setError('Произошла ошибка при входе');
     } finally {
       setIsLoading(false);
