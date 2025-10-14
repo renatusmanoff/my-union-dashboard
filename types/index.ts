@@ -1,5 +1,71 @@
-// Типы пользователей и ролей
-export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'CENTRAL_COMMITTEE' | 'REGIONAL' | 'LOCAL' | 'PRIMARY' | 'MEMBER';
+// Типы организаций
+export type OrganizationType = 'FEDERAL' | 'REGIONAL' | 'LOCAL' | 'PRIMARY';
+
+// Типы ролей по уровням организаций
+export type FederalRole = 
+  | 'FEDERAL_CHAIRMAN'           // Председатель
+  | 'FEDERAL_VICE_CHAIRMAN'      // Заместитель председателя
+  | 'FEDERAL_CHIEF_ACCOUNTANT'   // Главный бухгалтер
+  | 'FEDERAL_ACCOUNTANT'         // Бухгалтер
+  | 'FEDERAL_DEPARTMENT_HEAD'    // Начальник управления
+  | 'FEDERAL_OFFICE_HEAD'        // Начальник отдела
+  | 'FEDERAL_SPECIALIST'          // Специалист
+  | 'FEDERAL_PRESIDIUM_MEMBER'    // Член Президиума ЦК Профсоюза
+  | 'FEDERAL_PLENUM_MEMBER';     // Член Пленума ЦК Профсоюза
+
+export type RegionalRole =
+  | 'REGIONAL_CHAIRMAN'          // Председатель
+  | 'REGIONAL_VICE_CHAIRMAN'     // Заместитель председателя
+  | 'REGIONAL_CHIEF_ACCOUNTANT'  // Главный Бухгалтер
+  | 'REGIONAL_PRESIDIUM_MEMBER'  // Член Президиума областного комитета
+  | 'REGIONAL_COMMITTEE_MEMBER'  // Член областного комитета
+  | 'REGIONAL_ACCOUNTANT'         // Бухгалтер
+  | 'REGIONAL_DEPARTMENT_HEAD'   // Заведующий отделом
+  | 'REGIONAL_CHIEF_SPECIALIST'   // Главный специалист
+  | 'REGIONAL_SPECIALIST'         // Специалист
+  | 'REGIONAL_YOUTH_CHAIRMAN'     // Председатель Молодежного совета
+  | 'REGIONAL_YOUTH_VICE_CHAIRMAN' // Заместитель председателя Молодежного совета
+  | 'REGIONAL_YOUTH_MEMBER';     // Член Молодежного совета
+
+export type LocalRole =
+  | 'LOCAL_CHAIRMAN'             // Председатель
+  | 'LOCAL_VICE_CHAIRMAN'        // Заместитель председателя
+  | 'LOCAL_PRESIDIUM_MEMBER'     // Член Президиума местной организации
+  | 'LOCAL_PLENUM_MEMBER'        // Член Пленума местной организации
+  | 'LOCAL_ACCOUNTANT'           // Бухгалтер
+  | 'LOCAL_SPECIALIST';          // Специалист
+
+export type PrimaryRole =
+  | 'PRIMARY_CHAIRMAN'           // Председатель
+  | 'PRIMARY_VICE_CHAIRMAN'      // Заместитель председателя
+  | 'PRIMARY_ACCOUNTANT'         // Бухгалтер
+  | 'PRIMARY_COMMITTEE_MEMBER'    // Член Профкома
+  | 'PRIMARY_AUDIT_CHAIRMAN'     // Председатель КРК
+  | 'PRIMARY_AUDIT_MEMBER'       // Член КРК
+  | 'PRIMARY_YOUTH_CHAIRMAN'     // Председатель Молодежного совета
+  | 'PRIMARY_YOUTH_VICE_CHAIRMAN' // Заместитель председателя Молодежного совета
+  | 'PRIMARY_YOUTH_MEMBER';      // Член Молодежного совета
+
+export type ProfBureauRole =
+  | 'PROF_BUREAU_CHAIRMAN'       // Председатель ПрофБюро
+  | 'PROF_BUREAU_VICE_CHAIRMAN'  // Заместитель председателя ПрофБюро
+  | 'PROF_BUREAU_MEMBER';        // Член ПрофБюро
+
+export type ProfGroupRole =
+  | 'PROF_GROUP_ORGANIZER'       // Профгруппорг
+  | 'PROF_GROUP_VICE_ORGANIZER'  // Заместитель профгрупорга
+  | 'PROF_GROUP_MEMBER';         // Член профгруппы
+
+// Общий тип роли
+export type UserRole = 
+  | 'SUPER_ADMIN'
+  | FederalRole 
+  | RegionalRole 
+  | LocalRole 
+  | PrimaryRole 
+  | ProfBureauRole 
+  | ProfGroupRole
+  | 'MEMBER'; // Член профсоюза (для регистрации)
 
 export interface User {
   id: string;
@@ -11,6 +77,7 @@ export interface User {
   role: UserRole;
   organizationId: string;
   organizationName: string;
+  organizationType: OrganizationType;
   avatar?: string;
   isActive: boolean;
   emailVerified: boolean;
@@ -23,13 +90,16 @@ export interface User {
 export interface Organization {
   id: string;
   name: string;
-  type: 'CENTRAL_COMMITTEE' | 'REGIONAL' | 'LOCAL' | 'PRIMARY';
-  parentId?: string;
+  type: OrganizationType;
+  parentId?: string; // Для иерархии организаций
+  parentName?: string;
   address: string;
   phone: string;
   email: string;
-  director: string;
+  chairmanId?: string; // ID председателя организации
+  chairmanName?: string;
   membersCount: number;
+  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -206,6 +276,88 @@ export interface Discount {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// Интерфейсы для управления системой
+export interface AdminUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  phone: string;
+  role: UserRole;
+  organizationId: string;
+  organizationName: string;
+  isActive: boolean;
+  emailVerified: boolean;
+  temporaryPassword?: string; // Временный пароль для новых админов
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface MembershipValidation {
+  id: string;
+  userId: string;
+  organizationId: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  requestedAt: Date;
+  validatedAt?: Date;
+  validatedBy?: string;
+  notes?: string;
+}
+
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  body: string;
+  type: 'ADMIN_CREATED' | 'MEMBERSHIP_APPROVED' | 'MEMBERSHIP_REJECTED' | 'PASSWORD_RESET';
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Интерфейсы для структурных подразделений
+export interface ProfBureau {
+  id: string;
+  name: string;
+  organizationId: string; // Привязка к первичной организации
+  organizationName: string;
+  chairmanId?: string;
+  chairmanName?: string;
+  membersCount: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ProfGroup {
+  id: string;
+  name: string;
+  organizationId: string; // Привязка к первичной организации
+  organizationName: string;
+  profBureauId?: string; // Опциональная привязка к профбюро
+  profBureauName?: string;
+  organizerId?: string;
+  organizerName?: string;
+  membersCount: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Интерфейс для ролевых конфигураций
+export interface RoleConfig {
+  organizationType: OrganizationType;
+  roles: {
+    role: UserRole;
+    label: string;
+    description: string;
+    canCreateSubOrganizations: boolean;
+    canManageMembers: boolean;
+    canValidateMembership: boolean;
+  }[];
 }
 
 export interface Partner {

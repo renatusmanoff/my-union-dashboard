@@ -2,47 +2,69 @@ import { MenuItem, UserRole } from '@/types';
 
 // Конфигурация меню для разных ролей
 export const menuConfig: MenuItem[] = [
+  // Специальные пункты для супер-администратора
+  {
+    id: 'super-admin-dashboard',
+    label: 'Панель управления',
+    href: '/dashboard/super-admin',
+    icon: 'shield-check',
+    roles: ['SUPER_ADMIN']
+  },
+  {
+    id: 'admin-management',
+    label: 'Управление администраторами',
+    href: '/dashboard/admin-management',
+    icon: 'user-group',
+    roles: ['SUPER_ADMIN']
+  },
+  {
+    id: 'membership-validation',
+    label: 'Валидация членства',
+    href: '/dashboard/membership-validation',
+    icon: 'check-circle',
+    roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
+  },
   {
     id: 'news',
     label: 'Новости',
     href: '/dashboard/news',
     icon: 'newspaper',
-    roles: ['ADMIN', 'CENTRAL_COMMITTEE', 'REGIONAL', 'LOCAL', 'PRIMARY']
+    roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
   },
   {
     id: 'tasks',
     label: 'Задачи',
     href: '/dashboard/tasks',
     icon: 'checklist',
-    roles: ['ADMIN', 'CENTRAL_COMMITTEE', 'REGIONAL', 'LOCAL', 'PRIMARY']
+    roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
   },
   {
     id: 'documents',
     label: 'Электронный документооборот',
     href: '/dashboard/documents',
     icon: 'document-text',
-    roles: ['ADMIN', 'CENTRAL_COMMITTEE', 'REGIONAL', 'LOCAL', 'PRIMARY']
+    roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
   },
   {
     id: 'organizations',
     label: 'Организации',
     href: '/dashboard/organizations',
     icon: 'building-office',
-    roles: ['ADMIN', 'CENTRAL_COMMITTEE', 'REGIONAL', 'LOCAL', 'PRIMARY'],
+    roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN'],
     children: [
       {
         id: 'organizations-list',
         label: 'Список организаций',
         href: '/dashboard/organizations',
         icon: 'list-bullet',
-        roles: ['ADMIN', 'CENTRAL_COMMITTEE', 'REGIONAL', 'LOCAL', 'PRIMARY']
+        roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
       },
       {
         id: 'organizations-create',
         label: 'Создать организацию',
         href: '/dashboard/organizations/create',
         icon: 'plus',
-        roles: ['ADMIN']
+        roles: ['SUPER_ADMIN']
       }
     ]
   },
@@ -51,70 +73,70 @@ export const menuConfig: MenuItem[] = [
     label: 'Сообщения',
     href: '/dashboard/messages',
     icon: 'chat-bubble-left-right',
-    roles: ['ADMIN', 'CENTRAL_COMMITTEE', 'REGIONAL', 'LOCAL', 'PRIMARY']
+    roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
   },
   {
     id: 'projects',
     label: 'Проекты',
     href: '/dashboard/projects',
     icon: 'folder',
-    roles: ['ADMIN', 'CENTRAL_COMMITTEE', 'REGIONAL', 'LOCAL', 'PRIMARY']
+    roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
   },
   {
     id: 'calendar',
     label: 'Календарь',
     href: '/dashboard/calendar',
     icon: 'calendar',
-    roles: ['ADMIN', 'CENTRAL_COMMITTEE', 'REGIONAL', 'LOCAL', 'PRIMARY']
+    roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
   },
   {
     id: 'knowledge',
     label: 'База знаний',
     href: '/dashboard/knowledge',
     icon: 'book-open',
-    roles: ['ADMIN', 'CENTRAL_COMMITTEE', 'REGIONAL', 'LOCAL', 'PRIMARY']
+    roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
   },
   {
     id: 'employees',
     label: 'Сотрудники',
     href: '/dashboard/employees',
     icon: 'users',
-    roles: ['ADMIN', 'CENTRAL_COMMITTEE', 'REGIONAL', 'LOCAL', 'PRIMARY']
+    roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
   },
   {
     id: 'members',
     label: 'Члены профсоюза',
     href: '/dashboard/members',
     icon: 'user-group',
-    roles: ['ADMIN', 'CENTRAL_COMMITTEE', 'REGIONAL', 'LOCAL', 'PRIMARY']
+    roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
   },
   {
     id: 'reports',
     label: 'Отчетность',
     href: '/dashboard/reports',
     icon: 'chart-bar',
-    roles: ['ADMIN', 'CENTRAL_COMMITTEE', 'REGIONAL', 'LOCAL', 'PRIMARY']
+    roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
   },
   {
     id: 'profile',
     label: 'Профиль',
     href: '/dashboard/profile',
     icon: 'user',
-    roles: ['ADMIN', 'CENTRAL_COMMITTEE', 'REGIONAL', 'LOCAL', 'PRIMARY']
+    roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
   },
   {
     id: 'discounts',
     label: 'Скидки и льготы',
     href: '/dashboard/discounts',
     icon: 'gift',
-    roles: ['ADMIN', 'CENTRAL_COMMITTEE', 'REGIONAL', 'LOCAL', 'PRIMARY']
+    roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
   },
   {
     id: 'partners',
     label: 'Партнеры',
     href: '/dashboard/partners',
     icon: 'handshake',
-    roles: ['ADMIN']
+    roles: ['SUPER_ADMIN']
   }
 ];
 
@@ -140,20 +162,22 @@ export function hasAccessToPage(userRole: UserRole, path: string): boolean {
   return menuItem ? menuItem.roles.includes(userRole) : false;
 }
 
-// Роли и их описания
-export const roleDescriptions: Record<UserRole, string> = {
-  ADMIN: 'Администратор системы',
-  CENTRAL_COMMITTEE: 'Центральный комитет',
-  REGIONAL: 'Региональная организация',
-  LOCAL: 'Местная организация',
-  PRIMARY: 'Первичная организация'
+// Роли и их описания (только основные роли для отображения)
+export const roleDescriptions: Record<string, string> = {
+  SUPER_ADMIN: 'Супер-администратор системы',
+  FEDERAL_CHAIRMAN: 'Председатель федеральной организации',
+  REGIONAL_CHAIRMAN: 'Председатель региональной организации',
+  LOCAL_CHAIRMAN: 'Председатель местной организации',
+  PRIMARY_CHAIRMAN: 'Председатель первичной организации',
+  MEMBER: 'Член профсоюза'
 };
 
 // Иконки для ролей
-export const roleIcons: Record<UserRole, string> = {
-  ADMIN: 'shield-check',
-  CENTRAL_COMMITTEE: 'building-library',
-  REGIONAL: 'map',
-  LOCAL: 'building-office-2',
-  PRIMARY: 'home'
+export const roleIcons: Record<string, string> = {
+  SUPER_ADMIN: 'shield-check',
+  FEDERAL_CHAIRMAN: 'building-library',
+  REGIONAL_CHAIRMAN: 'map',
+  LOCAL_CHAIRMAN: 'building-office-2',
+  PRIMARY_CHAIRMAN: 'home',
+  MEMBER: 'user'
 };

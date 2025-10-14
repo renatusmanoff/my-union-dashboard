@@ -83,7 +83,7 @@ const priorityColors = {
 
 export default function TasksPage() {
   return (
-    <DashboardLayout userRole="ADMIN">
+    <DashboardLayout userRole="SUPER_ADMIN">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

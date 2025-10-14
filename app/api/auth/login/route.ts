@@ -16,22 +16,39 @@ export async function POST(request: NextRequest) {
 
     // Здесь должен быть запрос к базе данных
     // Пока используем моковые данные
-    const mockUser = {
-      id: 'user-1',
-      email: 'admin@example.com',
-      hashedPassword: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
-      firstName: 'Иван',
-      lastName: 'Иванов',
-      middleName: 'Петрович',
-      phone: '+7 (495) 123-45-67',
-      role: 'ADMIN' as const,
-      organizationId: 'org-1',
-      isActive: true,
-      emailVerified: true
-    };
+    const mockUsers = [
+      {
+        id: 'super-admin-1',
+        email: 'support@myunion.pro',
+        hashedPassword: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // 123321ZxQ@*
+        firstName: 'Супер',
+        lastName: 'Администратор',
+        middleName: 'Системы',
+        phone: '+7 (495) 000-00-00',
+        role: 'SUPER_ADMIN' as const,
+        organizationId: 'org-system',
+        isActive: true,
+        emailVerified: true
+      },
+      {
+        id: 'admin-1',
+        email: 'admin@example.com',
+        hashedPassword: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
+        firstName: 'Иван',
+        lastName: 'Иванов',
+        middleName: 'Петрович',
+        phone: '+7 (495) 123-45-67',
+        role: 'FEDERAL_CHAIRMAN' as const,
+        organizationId: 'org-1',
+        isActive: true,
+        emailVerified: true
+      }
+    ];
+
+    const mockUser = mockUsers.find(user => user.email === email);
 
     // Проверяем пользователя
-    if (email !== mockUser.email) {
+    if (!mockUser) {
       return NextResponse.json(
         { error: 'Неверный email или пароль' },
         { status: 401 }
@@ -57,8 +74,12 @@ export async function POST(request: NextRequest) {
       phone: mockUser.phone,
       role: mockUser.role,
       organizationId: mockUser.organizationId,
-      organizationName: 'Центральный комитет профсоюза',
-      avatar: undefined
+      organizationName: mockUser.role === 'SUPER_ADMIN' ? 'Система MyUnion' : 'Центральный комитет профсоюза',
+      organizationType: mockUser.role === 'SUPER_ADMIN' ? 'FEDERAL' : 'FEDERAL',
+      avatar: undefined,
+      isActive: mockUser.isActive,
+      emailVerified: mockUser.emailVerified,
+      membershipValidated: true // Для админов всегда true
     });
 
     // Устанавливаем cookie

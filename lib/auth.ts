@@ -52,21 +52,54 @@ export async function getCurrentUser(): Promise<User | null> {
     }
 
     // Здесь должен быть запрос к API для получения данных пользователя
-    // Пока возвращаем моковые данные
-    return {
-      id: payload.userId,
-      email: payload.email,
-      firstName: 'Иван',
-      lastName: 'Иванов',
-      middleName: 'Иванович',
-      phone: '+7 (999) 123-45-67',
-      role: payload.role,
-      organizationId: payload.organizationId,
-      organizationName: 'Центральный комитет профсоюза',
-      avatar: undefined,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+    // Пока возвращаем моковые данные на основе токена
+    const mockUsers: User[] = [
+      {
+        id: 'super-admin-1',
+        email: 'support@myunion.pro',
+        firstName: 'Супер',
+        lastName: 'Администратор',
+        middleName: 'Системы',
+        phone: '+7 (495) 000-00-00',
+        role: 'SUPER_ADMIN',
+        organizationId: 'org-system',
+        organizationName: 'Система MyUnion',
+        organizationType: 'FEDERAL',
+        avatar: undefined,
+        isActive: true,
+        emailVerified: true,
+        membershipValidated: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: 'admin-1',
+        email: 'admin@example.com',
+        firstName: 'Иван',
+        lastName: 'Иванов',
+        middleName: 'Петрович',
+        phone: '+7 (495) 123-45-67',
+        role: 'FEDERAL_CHAIRMAN',
+        organizationId: 'org-1',
+        organizationName: 'Центральный комитет профсоюза',
+        organizationType: 'FEDERAL',
+        avatar: undefined,
+        isActive: true,
+        emailVerified: true,
+        membershipValidated: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ];
+
+    // Находим пользователя по ID из токена
+    const mockUser = mockUsers.find(user => user.id === payload.userId);
+    
+    if (!mockUser) {
+      return null;
+    }
+
+    return mockUser;
   } catch {
     return null;
   }
@@ -79,27 +112,97 @@ export function hasRole(userRole: UserRole, requiredRoles: UserRole[]): boolean 
 
 // Функция для проверки прав администратора
 export function isAdmin(userRole: UserRole): boolean {
-  return userRole === 'ADMIN';
+  return userRole === 'SUPER_ADMIN' || 
+         userRole.startsWith('FEDERAL_') || 
+         userRole.startsWith('REGIONAL_') || 
+         userRole.startsWith('LOCAL_') || 
+         userRole.startsWith('PRIMARY_') ||
+         userRole.startsWith('PROF_');
+}
+
+// Функция для проверки, является ли пользователь супер-администратором
+export function isSuperAdmin(userRole: UserRole): boolean {
+  return userRole === 'SUPER_ADMIN';
 }
 
 // Функция для проверки прав на создание организаций
 export function canCreateOrganizations(userRole: UserRole): boolean {
-  return userRole === 'ADMIN';
+  return userRole === 'SUPER_ADMIN' || userRole.startsWith('FEDERAL_');
 }
 
 // Функция для проверки прав на управление партнерами
 export function canManagePartners(userRole: UserRole): boolean {
-  return userRole === 'ADMIN';
+  return userRole === 'SUPER_ADMIN' || userRole.startsWith('FEDERAL_');
+}
+
+// Функция для проверки, может ли пользователь создавать администраторов
+export function canCreateAdmins(userRole: UserRole): boolean {
+  return userRole === 'SUPER_ADMIN';
+}
+
+// Функция для проверки, может ли пользователь валидировать членство
+export function canValidateMembership(userRole: UserRole): boolean {
+  // Председатели и их заместители могут валидировать членство
+  const validationRoles = [
+    'SUPER_ADMIN',
+    'FEDERAL_CHAIRMAN', 'FEDERAL_VICE_CHAIRMAN', 'FEDERAL_PRESIDIUM_MEMBER',
+    'REGIONAL_CHAIRMAN', 'REGIONAL_VICE_CHAIRMAN', 'REGIONAL_PRESIDIUM_MEMBER',
+    'LOCAL_CHAIRMAN', 'LOCAL_VICE_CHAIRMAN', 'LOCAL_PRESIDIUM_MEMBER',
+    'PRIMARY_CHAIRMAN', 'PRIMARY_VICE_CHAIRMAN', 'PRIMARY_COMMITTEE_MEMBER'
+  ];
+  return validationRoles.includes(userRole);
+}
+
+// Функция для проверки, может ли пользователь создавать подорганизации
+export function canCreateSubOrganizations(userRole: UserRole): boolean {
+  // Только председатели и их заместители могут создавать подорганизации
+  const createRoles = [
+    'SUPER_ADMIN',
+    'FEDERAL_CHAIRMAN', 'FEDERAL_VICE_CHAIRMAN',
+    'REGIONAL_CHAIRMAN', 'REGIONAL_VICE_CHAIRMAN',
+    'LOCAL_CHAIRMAN', 'LOCAL_VICE_CHAIRMAN',
+    'PRIMARY_CHAIRMAN', 'PRIMARY_VICE_CHAIRMAN'
+  ];
+  return createRoles.includes(userRole);
+}
+
+// Функция для проверки, может ли пользователь управлять членами
+export function canManageMembers(userRole: UserRole): boolean {
+  // Все административные роли могут управлять членами
+  return userRole === 'SUPER_ADMIN' || 
+         userRole.startsWith('FEDERAL_') || 
+         userRole.startsWith('REGIONAL_') || 
+         userRole.startsWith('LOCAL_') || 
+         userRole.startsWith('PRIMARY_') ||
+         userRole.startsWith('PROF_');
 }
 
 // Функция для получения иерархии ролей
 export function getRoleHierarchy(userRole: UserRole): UserRole[] {
-  const hierarchy: Record<UserRole, UserRole[]> = {
-    ADMIN: ['ADMIN', 'CENTRAL_COMMITTEE', 'REGIONAL', 'LOCAL', 'PRIMARY'],
-    CENTRAL_COMMITTEE: ['CENTRAL_COMMITTEE', 'REGIONAL', 'LOCAL', 'PRIMARY'],
-    REGIONAL: ['REGIONAL', 'LOCAL', 'PRIMARY'],
-    LOCAL: ['LOCAL', 'PRIMARY'],
-    PRIMARY: ['PRIMARY']
+  const hierarchy: Record<string, UserRole[]> = {
+    SUPER_ADMIN: ['SUPER_ADMIN'],
+    
+    // Федеральный уровень
+    FEDERAL_CHAIRMAN: ['FEDERAL_CHAIRMAN', 'FEDERAL_VICE_CHAIRMAN', 'FEDERAL_CHIEF_ACCOUNTANT', 'FEDERAL_ACCOUNTANT', 'FEDERAL_DEPARTMENT_HEAD', 'FEDERAL_OFFICE_HEAD', 'FEDERAL_SPECIALIST', 'FEDERAL_PRESIDIUM_MEMBER', 'FEDERAL_PLENUM_MEMBER', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN', 'MEMBER'],
+    FEDERAL_VICE_CHAIRMAN: ['FEDERAL_VICE_CHAIRMAN', 'FEDERAL_CHIEF_ACCOUNTANT', 'FEDERAL_ACCOUNTANT', 'FEDERAL_DEPARTMENT_HEAD', 'FEDERAL_OFFICE_HEAD', 'FEDERAL_SPECIALIST', 'FEDERAL_PRESIDIUM_MEMBER', 'FEDERAL_PLENUM_MEMBER', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN', 'MEMBER'],
+    
+    // Региональный уровень
+    REGIONAL_CHAIRMAN: ['REGIONAL_CHAIRMAN', 'REGIONAL_VICE_CHAIRMAN', 'REGIONAL_CHIEF_ACCOUNTANT', 'REGIONAL_PRESIDIUM_MEMBER', 'REGIONAL_COMMITTEE_MEMBER', 'REGIONAL_ACCOUNTANT', 'REGIONAL_DEPARTMENT_HEAD', 'REGIONAL_CHIEF_SPECIALIST', 'REGIONAL_SPECIALIST', 'REGIONAL_YOUTH_CHAIRMAN', 'REGIONAL_YOUTH_VICE_CHAIRMAN', 'REGIONAL_YOUTH_MEMBER', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN', 'MEMBER'],
+    REGIONAL_VICE_CHAIRMAN: ['REGIONAL_VICE_CHAIRMAN', 'REGIONAL_CHIEF_ACCOUNTANT', 'REGIONAL_PRESIDIUM_MEMBER', 'REGIONAL_COMMITTEE_MEMBER', 'REGIONAL_ACCOUNTANT', 'REGIONAL_DEPARTMENT_HEAD', 'REGIONAL_CHIEF_SPECIALIST', 'REGIONAL_SPECIALIST', 'REGIONAL_YOUTH_CHAIRMAN', 'REGIONAL_YOUTH_VICE_CHAIRMAN', 'REGIONAL_YOUTH_MEMBER', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN', 'MEMBER'],
+    
+    // Местный уровень
+    LOCAL_CHAIRMAN: ['LOCAL_CHAIRMAN', 'LOCAL_VICE_CHAIRMAN', 'LOCAL_PRESIDIUM_MEMBER', 'LOCAL_PLENUM_MEMBER', 'LOCAL_ACCOUNTANT', 'LOCAL_SPECIALIST', 'PRIMARY_CHAIRMAN', 'MEMBER'],
+    LOCAL_VICE_CHAIRMAN: ['LOCAL_VICE_CHAIRMAN', 'LOCAL_PRESIDIUM_MEMBER', 'LOCAL_PLENUM_MEMBER', 'LOCAL_ACCOUNTANT', 'LOCAL_SPECIALIST', 'PRIMARY_CHAIRMAN', 'MEMBER'],
+    
+    // Первичный уровень
+    PRIMARY_CHAIRMAN: ['PRIMARY_CHAIRMAN', 'PRIMARY_VICE_CHAIRMAN', 'PRIMARY_ACCOUNTANT', 'PRIMARY_COMMITTEE_MEMBER', 'PRIMARY_AUDIT_CHAIRMAN', 'PRIMARY_AUDIT_MEMBER', 'PRIMARY_YOUTH_CHAIRMAN', 'PRIMARY_YOUTH_VICE_CHAIRMAN', 'PRIMARY_YOUTH_MEMBER', 'PROF_BUREAU_CHAIRMAN', 'PROF_GROUP_ORGANIZER', 'MEMBER'],
+    PRIMARY_VICE_CHAIRMAN: ['PRIMARY_VICE_CHAIRMAN', 'PRIMARY_ACCOUNTANT', 'PRIMARY_COMMITTEE_MEMBER', 'PRIMARY_AUDIT_CHAIRMAN', 'PRIMARY_AUDIT_MEMBER', 'PRIMARY_YOUTH_CHAIRMAN', 'PRIMARY_YOUTH_VICE_CHAIRMAN', 'PRIMARY_YOUTH_MEMBER', 'PROF_BUREAU_CHAIRMAN', 'PROF_GROUP_ORGANIZER', 'MEMBER'],
+    
+    // Структурные подразделения
+    PROF_BUREAU_CHAIRMAN: ['PROF_BUREAU_CHAIRMAN', 'PROF_BUREAU_VICE_CHAIRMAN', 'PROF_BUREAU_MEMBER', 'PROF_GROUP_ORGANIZER', 'MEMBER'],
+    PROF_GROUP_ORGANIZER: ['PROF_GROUP_ORGANIZER', 'PROF_GROUP_VICE_ORGANIZER', 'PROF_GROUP_MEMBER', 'MEMBER'],
+    
+    MEMBER: ['MEMBER']
   };
 
   return hierarchy[userRole] || [];
@@ -111,8 +214,8 @@ export function canAccessOrganization(
   userOrganizationId: string,
   targetOrganizationId: string
 ): boolean {
-  // Администратор имеет доступ ко всем организациям
-  if (userRole === 'ADMIN') {
+  // Супер-администратор имеет доступ ко всем организациям
+  if (userRole === 'SUPER_ADMIN') {
     return true;
   }
 

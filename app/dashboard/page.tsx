@@ -2,7 +2,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 
 export default function DashboardPage() {
   return (
-    <DashboardLayout userRole="ADMIN">
+    <DashboardLayout userRole="SUPER_ADMIN">
       <div className="space-y-6">
         {/* Welcome Section */}
         <div 

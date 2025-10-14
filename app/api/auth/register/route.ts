@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       lastName,
       middleName: middleName || null,
       phone,
-      role: 'PRIMARY' as const,
+      role: 'MEMBER' as const,
       organizationId: organizationId || 'org-default',
       isActive: true,
       emailVerified: false
@@ -68,7 +68,11 @@ export async function POST(request: NextRequest) {
       role: newUser.role,
       organizationId: newUser.organizationId,
       organizationName: 'Первичная организация',
-      avatar: undefined
+      organizationType: 'PRIMARY',
+      avatar: undefined,
+      isActive: newUser.isActive,
+      emailVerified: newUser.emailVerified,
+      membershipValidated: false
     });
 
     // Устанавливаем cookie

@@ -9,7 +9,7 @@ interface DashboardLayoutProps {
   userRole?: UserRole;
 }
 
-export default function DashboardLayout({ children, userRole = 'ADMIN' }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, userRole = 'SUPER_ADMIN' }: DashboardLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const toggleSidebar = () => {

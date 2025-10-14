@@ -6,11 +6,12 @@ const mockOrganizations: Organization[] = [
   {
     id: '1',
     name: 'Центральный комитет профсоюза',
-    type: 'CENTRAL_COMMITTEE',
+    type: 'FEDERAL',
     address: 'г. Москва, ул. Тверская, д. 1',
     phone: '+7 (495) 123-45-67',
     email: 'info@union.ru',
-    director: 'Иван Петров',
+    chairmanName: 'Иван Петров',
+    isActive: true,
     membersCount: 15000,
     createdAt: new Date('2020-01-01'),
     updatedAt: new Date('2024-01-01')
@@ -23,7 +24,8 @@ const mockOrganizations: Organization[] = [
     address: 'г. Москва, ул. Арбат, д. 10',
     phone: '+7 (495) 234-56-78',
     email: 'moscow@union.ru',
-    director: 'Мария Сидорова',
+    chairmanName: 'Мария Сидорова',
+    isActive: true,
     membersCount: 5000,
     createdAt: new Date('2020-02-01'),
     updatedAt: new Date('2024-01-01')
@@ -36,7 +38,8 @@ const mockOrganizations: Organization[] = [
     address: 'г. Москва, ул. Красная площадь, д. 1',
     phone: '+7 (495) 345-67-89',
     email: 'central@union.ru',
-    director: 'Алексей Козлов',
+    chairmanName: 'Алексей Козлов',
+    isActive: true,
     membersCount: 1000,
     createdAt: new Date('2020-03-01'),
     updatedAt: new Date('2024-01-01')
@@ -49,7 +52,8 @@ const mockOrganizations: Organization[] = [
     address: 'г. Москва, ул. Заводская, д. 5',
     phone: '+7 (495) 456-78-90',
     email: 'factory@union.ru',
-    director: 'Елена Волкова',
+    chairmanName: 'Елена Волкова',
+    isActive: true,
     membersCount: 500,
     createdAt: new Date('2020-04-01'),
     updatedAt: new Date('2024-01-01')
@@ -57,14 +61,14 @@ const mockOrganizations: Organization[] = [
 ];
 
 const typeLabels = {
-  CENTRAL_COMMITTEE: 'Центральный комитет',
+  FEDERAL: 'Федеральный',
   REGIONAL: 'Региональная',
   LOCAL: 'Местная',
   PRIMARY: 'Первичная'
 };
 
 const typeColors = {
-  CENTRAL_COMMITTEE: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+  FEDERAL: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
   REGIONAL: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
   LOCAL: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
   PRIMARY: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
@@ -72,7 +76,7 @@ const typeColors = {
 
 export default function OrganizationsPage() {
   return (
-    <DashboardLayout userRole="ADMIN">
+    <DashboardLayout userRole="SUPER_ADMIN">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -171,7 +175,7 @@ export default function OrganizationsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {org.director}
+                      {org.chairmanName}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {org.membersCount.toLocaleString()}
