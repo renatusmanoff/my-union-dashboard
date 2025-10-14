@@ -1,15 +1,421 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  output   = "../app/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// Пользователи системы
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  password        String
+  firstName       String
+  lastName        String
+  middleName      String?
+  phone           String
+  role            UserRole @default(PRIMARY)
+  avatar          String?
+  isActive        Boolean  @default(true)
+  emailVerified   Boolean  @default(false)
+  lastLoginAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Связи
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  
+  // Созданные новости
+  createdNews     News[]
+  
+  // Созданные задачи
+  createdTasks    Task[] @relation("TaskCreator")
+  assignedTasks   Task[] @relation("TaskAssignee")
+  
+  // Созданные документы
+  createdDocuments Document[]
+  
+  // Отправленные сообщения
+  sentMessages    Message[] @relation("MessageSender")
+  receivedMessages Message[] @relation("MessageRecipient")
+  
+  // Созданные проекты
+  createdProjects Project[]
+  
+  // Созданные события календаря
+  createdEvents   CalendarEvent[]
+  
+  // Созданные статьи базы знаний
+  createdKnowledge KnowledgeBaseItem[]
+  
+  // Созданные отчеты
+  createdReports  Report[]
+
+  @@map("users")
+}
+
+// Организации
+model Organization {
+  id            String   @id @default(cuid())
+  name          String
+  type          OrganizationType
+  parentId      String?
+  parent        Organization? @relation("OrganizationHierarchy", fields: [parentId], references: [id])
+  children      Organization[] @relation("OrganizationHierarchy")
+  address       String
+  phone         String
+  email         String
+  director      String
+  membersCount  Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Связи
+  users         User[]
+  news          News[]
+  tasks         Task[]
+  documents     Document[]
+  messages      Message[]
+  projects      Project[]
+  events        CalendarEvent[]
+  knowledge     KnowledgeBaseItem[]
+  employees     Employee[]
+  members       UnionMember[]
+  reports       Report[]
+
+  @@map("organizations")
+}
+
+// Новости
+model News {
+  id              String   @id @default(cuid())
+  title           String
+  content         String
+  excerpt         String
+  imageUrl        String?
+  isPublished     Boolean  @default(false)
+  publishedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Связи
+  authorId        String
+  author          User @relation(fields: [authorId], references: [id])
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("news")
+}
+
+// Задачи
+model Task {
+  id              String     @id @default(cuid())
+  title           String
+  description     String
+  status          TaskStatus @default(PENDING)
+  priority        TaskPriority @default(MEDIUM)
+  dueDate         DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // Связи
+  creatorId       String
+  creator         User @relation("TaskCreator", fields: [creatorId], references: [id])
+  assigneeId      String?
+  assignee        User? @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("tasks")
+}
+
+// Документы
+model Document {
+  id              String         @id @default(cuid())
+  title           String
+  type            DocumentType
+  status          DocumentStatus @default(DRAFT)
+  fileUrl         String
+  fileName        String
+  fileSize        Int
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Связи
+  authorId        String
+  author          User @relation(fields: [authorId], references: [id])
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("documents")
+}
+
+// Сообщения
+model Message {
+  id              String   @id @default(cuid())
+  subject         String
+  content         String
+  isRead          Boolean  @default(false)
+  readAt          DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Связи
+  senderId        String
+  sender          User @relation("MessageSender", fields: [senderId], references: [id])
+  recipientId     String
+  recipient       User @relation("MessageRecipient", fields: [recipientId], references: [id])
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("messages")
+}
+
+// Проекты
+model Project {
+  id              String        @id @default(cuid())
+  name            String
+  description     String
+  status          ProjectStatus @default(PLANNING)
+  startDate       DateTime
+  endDate         DateTime?
+  budget          Float?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Связи
+  managerId       String
+  manager         User @relation(fields: [managerId], references: [id])
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("projects")
+}
+
+// События календаря
+model CalendarEvent {
+  id              String      @id @default(cuid())
+  title           String
+  description     String?
+  startDate       DateTime
+  endDate         DateTime
+  type            EventType
+  attendees       String[]    // JSON array of user IDs
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Связи
+  creatorId       String
+  creator         User @relation(fields: [creatorId], references: [id])
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("calendar_events")
+}
+
+// База знаний
+model KnowledgeBaseItem {
+  id              String   @id @default(cuid())
+  title           String
+  content         String
+  category        String
+  tags            String[] // JSON array of tags
+  views           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Связи
+  authorId        String
+  author          User @relation(fields: [authorId], references: [id])
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("knowledge_base")
+}
+
+// Сотрудники
+model Employee {
+  id              String   @id @default(cuid())
+  firstName       String
+  lastName        String
+  middleName      String?
+  position        String
+  department      String
+  email           String
+  phone           String
+  hireDate        DateTime
+  salary          Float?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Связи
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("employees")
+}
+
+// Члены профсоюза
+model UnionMember {
+  id              String         @id @default(cuid())
+  firstName       String
+  lastName        String
+  middleName      String?
+  membershipNumber String        @unique
+  joinDate        DateTime
+  status          MemberStatus   @default(ACTIVE)
+  workplace       String
+  position        String
+  phone           String
+  email           String?
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Связи
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("union_members")
+}
+
+// Отчеты
+model Report {
+  id              String     @id @default(cuid())
+  title           String
+  type            ReportType
+  period          String
+  fileUrl         String
+  fileName        String
+  fileSize        Int
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // Связи
+  authorId        String
+  author          User @relation(fields: [authorId], references: [id])
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("reports")
+}
+
+// Партнеры
+model Partner {
+  id              String   @id @default(cuid())
+  name            String
+  description     String
+  category        String
+  contactPerson   String
+  email           String
+  phone           String
+  website         String?
+  logoUrl         String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Связи
+  discounts       Discount[]
+
+  @@map("partners")
+}
+
+// Скидки и льготы
+model Discount {
+  id              String   @id @default(cuid())
+  title           String
+  description     String
+  discountPercent Int
+  category        String
+  validFrom       DateTime
+  validTo         DateTime
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Связи
+  partnerId       String
+  partner         Partner @relation(fields: [partnerId], references: [id])
+
+  @@map("discounts")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  CENTRAL_COMMITTEE
+  REGIONAL
+  LOCAL
+  PRIMARY
+}
+
+enum OrganizationType {
+  CENTRAL_COMMITTEE
+  REGIONAL
+  LOCAL
+  PRIMARY
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum DocumentType {
+  INTERNAL
+  EXTERNAL
+  REGULATORY
+}
+
+enum DocumentStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum EventType {
+  MEETING
+  EVENT
+  DEADLINE
+  HOLIDAY
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum ReportType {
+  FINANCIAL
+  MEMBERSHIP
+  ACTIVITY
+  STATISTICAL
 }
