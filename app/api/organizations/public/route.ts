@@ -11,7 +11,6 @@ export async function GET() {
         id: true,
         name: true,
         type: true,
-        industry: true,
         address: true,
         phone: true,
         email: true,
