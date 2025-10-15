@@ -52,8 +52,19 @@ export async function getCurrentUser(): Promise<User | null> {
     }
 
     // Получаем данные пользователя из базы данных
-    const { findUserById } = await import('@/lib/db');
-    const user = await findUserById(payload.userId);
+    const { prisma } = await import('@/lib/database');
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            type: true
+          }
+        }
+      }
+    });
     
     if (!user) {
       return null;

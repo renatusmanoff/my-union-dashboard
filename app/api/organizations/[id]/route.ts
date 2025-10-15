@@ -140,21 +140,21 @@ export async function PUT(
 
     // Обновляем организацию
     const updatedOrganization: Organization = {
-      ...mockOrganizations[organizationIndex],
-      name: name || mockOrganizations[organizationIndex].name,
-      type: type || mockOrganizations[organizationIndex].type,
-      parentId: parentId !== undefined ? parentId : mockOrganizations[organizationIndex].parentId,
-      parentName: parentId ? mockOrganizations.find(org => org.id === parentId)?.name : mockOrganizations[organizationIndex].parentName,
-      address: address || mockOrganizations[organizationIndex].address,
-      phone: phone || mockOrganizations[organizationIndex].phone,
-      email: email || mockOrganizations[organizationIndex].email,
-      chairmanName: chairmanName !== undefined ? chairmanName : mockOrganizations[organizationIndex].chairmanName,
-      chairmanId: chairmanName ? mockOrganizations[organizationIndex].chairmanId : undefined,
-      isActive: isActive !== undefined ? isActive : mockOrganizations[organizationIndex].isActive,
+      ...realOrganizations[organizationIndex],
+      name: name || realOrganizations[organizationIndex].name,
+      type: type || realOrganizations[organizationIndex].type,
+      parentId: parentId !== undefined ? parentId : realOrganizations[organizationIndex].parentId,
+      parentName: parentId ? realOrganizations.find(org => org.id === parentId)?.name : realOrganizations[organizationIndex].parentName,
+      address: address || realOrganizations[organizationIndex].address,
+      phone: phone || realOrganizations[organizationIndex].phone,
+      email: email || realOrganizations[organizationIndex].email,
+      chairmanName: chairmanName !== undefined ? chairmanName : realOrganizations[organizationIndex].chairmanName,
+      chairmanId: chairmanName ? realOrganizations[organizationIndex].chairmanId : undefined,
+      isActive: isActive !== undefined ? isActive : realOrganizations[organizationIndex].isActive,
       updatedAt: new Date()
     };
 
-    mockOrganizations[organizationIndex] = updatedOrganization;
+    realOrganizations[organizationIndex] = updatedOrganization;
 
     return NextResponse.json({
       success: true,

@@ -108,7 +108,7 @@ export default function NewsPage() {
               
               <div className="p-6">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-100 dark:bg-primary-900 px-2 py-1 rounded-full">
+                  <span className="text-xs font-medium bg-primary-500 text-white px-2 py-1 rounded-full">
                     {news.organizationName}
                   </span>
                   <span className="text-xs text-gray-500 dark:text-gray-400">

@@ -66,13 +66,16 @@ model Organization {
   id            String   @id @default(cuid())
   name          String
   type          OrganizationType
+  industry      UnionIndustry
   parentId      String?
   parent        Organization? @relation("OrganizationHierarchy", fields: [parentId], references: [id])
   children      Organization[] @relation("OrganizationHierarchy")
   address       String
   phone         String
-  email         String
-  director      String
+  email         String   @unique
+  chairmanName  String?
+  chairmanId    String?
+  inn           String?
   membersCount  Int      @default(0)
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
@@ -90,8 +93,62 @@ model Organization {
   employees     Employee[]
   members       UnionMember[]
   reports       Report[]
+  applications  MembershipApplication[]
 
   @@map("organizations")
+}
+
+// Заявления на вступление в профсоюз
+model MembershipApplication {
+  id              String   @id @default(cuid())
+  
+  // Личные данные
+  firstName       String
+  lastName        String
+  middleName      String?
+  dateOfBirth     DateTime
+  gender          Gender
+  photo           String?
+  
+  // Образование и работа
+  education       String
+  specialties     String[]  // Массив специальностей
+  positions       String[]  // Массив должностей
+  
+  // Адрес проживания
+  addressIndex    String
+  addressRegion   String
+  addressMunicipality String
+  addressLocality String
+  addressStreet   String
+  addressHouse    String
+  addressApartment String?
+  
+  // Контакты
+  phone           String
+  additionalPhone String?
+  email           String
+  
+  // Дополнительная информация
+  children        Json?    // JSON массив детей
+  hobbies         String[] // Массив увлечений
+  
+  // Данные заявления
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  applicationDate DateTime
+  status          ApplicationStatus @default(PENDING)
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  
+  // PDF заявления
+  pdfUrl          String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("membership_applications")
 }
 
 // Новости
@@ -209,7 +266,7 @@ model CalendarEvent {
   startDate       DateTime
   endDate         DateTime
   type            EventType
-  attendees       String[]    // JSON array of user IDs
+  attendees       String[]    // Массив ID пользователей
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -228,7 +285,7 @@ model KnowledgeBaseItem {
   title           String
   content         String
   category        String
-  tags            String[] // JSON array of tags
+  tags            String[] // Массив тегов
   views           Int      @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -429,11 +486,46 @@ enum OrganizationType {
   PRIMARY
 }
 
+enum UnionIndustry {
+  EDUCATION
+  HEALTHCARE
+  OIL_GAS
+  METALLURGY
+  TRANSPORT
+  CONSTRUCTION
+  COMMUNICATIONS
+  ENERGY
+  AGRICULTURE
+  TRADE
+  CULTURE
+  SPORT
+  DEFENSE
+  CHEMICAL
+  TEXTILE
+  FOOD
+  FORESTRY
+  MINING
+  MACHINE_BUILDING
+  FINANCE
+  PUBLIC_SERVICE
+}
+
 enum TaskStatus {
   PENDING
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum Gender {
+  MALE
+  FEMALE
 }
 
 enum TaskPriority {

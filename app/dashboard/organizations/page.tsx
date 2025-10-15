@@ -2,11 +2,14 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Organization, OrganizationType, AdminUser, UserRole } from '@/types';
+import { Organization, OrganizationType, AdminUser, UserRole, UnionIndustry } from '@/types';
 import { getRolesByOrganizationType } from '@/lib/role-config';
+import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { cachedFetch } from '@/lib/cache';
 
 interface CreateOrganizationForm {
   name: string;
+  industry: UnionIndustry;
   type: OrganizationType;
   parentId: string;
   address: string;
@@ -24,10 +27,34 @@ const typeLabels = {
 };
 
 const typeColors = {
-  FEDERAL: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-  REGIONAL: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  LOCAL: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  PRIMARY: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+  FEDERAL: 'bg-purple-500 text-white',
+  REGIONAL: 'bg-blue-500 text-white',
+  LOCAL: 'bg-green-500 text-white',
+  PRIMARY: 'bg-orange-500 text-white'
+};
+
+const industryLabels = {
+  EDUCATION: 'Образование и наука',
+  HEALTHCARE: 'Здравоохранение',
+  OIL_GAS: 'Нефтяная и газовая промышленность',
+  METALLURGY: 'Металлургия',
+  TRANSPORT: 'Транспорт',
+  CONSTRUCTION: 'Строительство',
+  COMMUNICATIONS: 'Связь',
+  ENERGY: 'Энергетика',
+  AGRICULTURE: 'Сельское хозяйство',
+  TRADE: 'Торговля',
+  CULTURE: 'Культура',
+  SPORT: 'Спорт',
+  DEFENSE: 'Оборонная промышленность',
+  CHEMICAL: 'Химическая промышленность',
+  TEXTILE: 'Легкая промышленность',
+  FOOD: 'Пищевая промышленность',
+  FORESTRY: 'Лесная промышленность',
+  MINING: 'Горнодобывающая промышленность',
+  MACHINE_BUILDING: 'Машиностроение',
+  FINANCE: 'Финансы и банковское дело',
+  PUBLIC_SERVICE: 'Государственная служба'
 };
 
 export default function OrganizationsPage() {
@@ -41,6 +68,7 @@ export default function OrganizationsPage() {
   const [typeFilter, setTypeFilter] = useState<OrganizationType | ''>('');
   const [formData, setFormData] = useState<CreateOrganizationForm>({
     name: '',
+    industry: 'EDUCATION',
     type: 'FEDERAL',
     parentId: '',
     address: '',
@@ -57,52 +85,32 @@ export default function OrganizationsPage() {
     phone: '',
     role: 'FEDERAL_CHAIRMAN' as UserRole
   });
+  const [searchingINN, setSearchingINN] = useState(false);
 
   // Функция поиска организации по ИНН
   const searchOrganizationByINN = async (inn: string) => {
     try {
-      // Здесь будет реальный API запрос к сервису поиска организаций
-      // Пока используем моковые данные
-      const mockOrganizations = [
-        {
-          name: 'ПАО "Газпром"',
-          inn: '7736050003',
-          address: 'г. Москва, ул. Наметкина, д. 16',
-          ogrn: '1027700070518'
-        },
-        {
-          name: 'ПАО "Роснефть"',
-          inn: '7706107510',
-          address: 'г. Москва, ул. Софийская набережная, д. 26/1',
-          ogrn: '1027739850962'
-        },
-        {
-          name: 'ПАО "Сбербанк"',
-          inn: '7707083893',
-          address: 'г. Москва, ул. Вавилова, д. 19',
-          ogrn: '1027700132195'
-        },
-        {
-          name: 'ПАО "Лукойл"',
-          inn: '7708004767',
-          address: 'г. Москва, ул. Сретенка, д. 11',
-          ogrn: '1027700035769'
-        }
-      ];
+      setSearchingINN(true);
+      const response = await fetch(`/api/organizations/search-inn?inn=${inn}`);
+      const data = await response.json();
 
-      const foundOrg = mockOrganizations.find(org => org.inn === inn);
-      if (foundOrg) {
+      if (data.success && data.organization) {
+        const foundOrg = data.organization;
         setFormData(prev => ({
           ...prev,
           name: foundOrg.name,
           address: foundOrg.address
         }));
         return foundOrg;
+      } else {
+        console.error('Organization not found:', data.error);
+        return null;
       }
-      return null;
     } catch (error) {
       console.error('Error searching organization by INN:', error);
       return null;
+    } finally {
+      setSearchingINN(false);
     }
   };
 
@@ -113,7 +121,7 @@ export default function OrganizationsPage() {
       if (searchTerm) params.append('search', searchTerm);
       if (typeFilter) params.append('type', typeFilter);
 
-      const response = await fetch(`/api/organizations?${params}`);
+      const response = await cachedFetch(`/api/organizations?${params}`, undefined, 1 * 60 * 1000); // 1 minute cache
       const data = await response.json();
 
       if (data.success) {
@@ -220,6 +228,7 @@ export default function OrganizationsPage() {
           setShowCreateForm(false);
           setFormData({
             name: '',
+            industry: 'EDUCATION',
             type: 'FEDERAL',
             parentId: '',
             address: '',
@@ -253,7 +262,9 @@ export default function OrganizationsPage() {
     if (formData.inn.length === 10 || formData.inn.length === 12) {
       const foundOrg = await searchOrganizationByINN(formData.inn);
       if (foundOrg) {
-        alert(`Организация найдена: ${foundOrg.name}`);
+        // Данные автоматически заполняются в searchOrganizationByINN
+        // Показываем уведомление об успешном поиске
+        console.log(`Организация найдена: ${foundOrg.name}`);
       } else {
         alert('Организация с таким ИНН не найдена. Заполните данные вручную.');
       }
@@ -267,6 +278,7 @@ export default function OrganizationsPage() {
     setShowCreateForm(false);
     setFormData({
       name: '',
+      industry: 'EDUCATION',
       type: 'FEDERAL',
       parentId: '',
       address: '',
@@ -404,11 +416,28 @@ export default function OrganizationsPage() {
                       <button
                         type="button"
                         onClick={handleINNSearch}
-                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                        disabled={searchingINN}
+                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Найти
+                        {searchingINN ? 'Поиск...' : 'Найти'}
                       </button>
                     </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Отрасль профсоюза *</label>
+                    <select
+                      required
+                      value={formData.industry}
+                      onChange={(e) => setFormData({ ...formData, industry: e.target.value as UnionIndustry })}
+                      className="w-full px-3 py-2 rounded-lg"
+                      style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
+                    >
+                      {Object.entries(industryLabels).map(([key, label]) => (
+                        <option key={key} value={key}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Название организации *</label>
@@ -622,8 +651,18 @@ export default function OrganizationsPage() {
                         </td>
                         <td className="px-6 py-4 text-sm">
                           <div className="flex space-x-2">
-                            <button className="text-blue-400 hover:text-blue-600">Редактировать</button>
-                            <button className="text-red-400 hover:text-red-600">Удалить</button>
+                            <button 
+                              className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                              title="Редактировать"
+                            >
+                              <PencilIcon className="w-5 h-5" />
+                            </button>
+                            <button 
+                              className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                              title="Удалить"
+                            >
+                              <TrashIcon className="w-5 h-5" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -672,8 +711,18 @@ export default function OrganizationsPage() {
                         </td>
                         <td className="px-6 py-4 text-sm">
                           <div className="flex space-x-2">
-                            <button className="text-blue-400 hover:text-blue-600">Редактировать</button>
-                            <button className="text-red-400 hover:text-red-600">Деактивировать</button>
+                            <button 
+                              className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                              title="Редактировать"
+                            >
+                              <PencilIcon className="w-5 h-5" />
+                            </button>
+                            <button 
+                              className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                              title="Деактивировать"
+                            >
+                              <TrashIcon className="w-5 h-5" />
+                            </button>
                           </div>
                         </td>
                       </tr>

@@ -48,11 +48,11 @@ const mockDiscounts: Discount[] = [
 ];
 
 const categoryColors = {
-  'Здравоохранение': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  'Спорт и фитнес': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  'Туризм': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-  'Образование': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-  'Торговля': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+  'Здравоохранение': 'bg-green-500 text-white',
+  'Спорт и фитнес': 'bg-blue-500 text-white',
+  'Туризм': 'bg-purple-500 text-white',
+  'Образование': 'bg-yellow-500 text-white',
+  'Торговля': 'bg-orange-500 text-white'
 };
 
 export default function DiscountsPage() {
@@ -186,10 +186,10 @@ export default function DiscountsPage() {
                       {discount.title}
                     </h3>
                     <div className="flex items-center space-x-2 mb-2">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${categoryColors[discount.category as keyof typeof categoryColors] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'}`}>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${categoryColors[discount.category as keyof typeof categoryColors] || 'bg-gray-500 text-white'}`}>
                         {discount.category}
                       </span>
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${discount.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${discount.isActive ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
                         {discount.isActive ? 'Активна' : 'Неактивна'}
                       </span>
                     </div>

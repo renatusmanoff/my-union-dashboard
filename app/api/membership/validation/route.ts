@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, canValidateMembership } from '@/lib/auth';
 import { MembershipValidation } from '@/types';
 import { sendMembershipValidationEmail } from '@/lib/email';
+import { prisma } from '@/lib/database';
 
 export async function GET() {
   try {
@@ -22,30 +23,44 @@ export async function GET() {
       );
     }
 
-    // Здесь должен быть запрос к базе данных
-    // Пока возвращаем моковые данные
-    const mockValidations: MembershipValidation[] = [
-      {
-        id: 'validation-1',
-        userId: 'member-1',
-        organizationId: currentUser.organizationId,
-        status: 'PENDING',
-        requestedAt: new Date(Date.now() - 86400000), // 1 день назад
-        notes: 'Новый член профсоюза'
+    // Получаем заявления на членство из базы данных
+    const where: any = {};
+    
+    // Если пользователь не супер-администратор, показываем только заявления его организации
+    if (currentUser.role !== 'SUPER_ADMIN' && currentUser.organizationId) {
+      where.organizationId = currentUser.organizationId;
+    }
+
+    const applications = await prisma.membershipApplication.findMany({
+      where,
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            type: true
+          }
+        }
       },
-      {
-        id: 'validation-2',
-        userId: 'member-2',
-        organizationId: currentUser.organizationId,
-        status: 'PENDING',
-        requestedAt: new Date(Date.now() - 172800000), // 2 дня назад
-        notes: 'Переход из другой организации'
+      orderBy: {
+        createdAt: 'desc'
       }
-    ];
+    });
+
+    // Преобразуем заявления в формат валидации
+    const validations = applications.map(app => ({
+      id: app.id,
+      userId: app.email, // Используем email как идентификатор пользователя
+      organizationId: app.organizationId,
+      status: app.status,
+      requestedAt: app.createdAt,
+      notes: app.notes || `Заявление от ${app.firstName} ${app.lastName}`,
+      application: app
+    }));
 
     return NextResponse.json({
       success: true,
-      validations: mockValidations
+      validations
     });
 
   } catch (error) {

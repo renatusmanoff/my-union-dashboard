@@ -1,6 +1,30 @@
 // Типы организаций
 export type OrganizationType = 'FEDERAL' | 'REGIONAL' | 'LOCAL' | 'PRIMARY';
 
+// Отрасли профсоюзов
+export type UnionIndustry = 
+  | 'EDUCATION'           // Образование и наука
+  | 'HEALTHCARE'          // Здравоохранение
+  | 'OIL_GAS'            // Нефтяная и газовая промышленность
+  | 'METALLURGY'         // Металлургия
+  | 'TRANSPORT'          // Транспорт
+  | 'CONSTRUCTION'       // Строительство
+  | 'COMMUNICATIONS'     // Связь
+  | 'ENERGY'             // Энергетика
+  | 'AGRICULTURE'        // Сельское хозяйство
+  | 'TRADE'              // Торговля
+  | 'CULTURE'            // Культура
+  | 'SPORT'              // Спорт
+  | 'DEFENSE'            // Оборонная промышленность
+  | 'CHEMICAL'           // Химическая промышленность
+  | 'TEXTILE'            // Легкая промышленность
+  | 'FOOD'               // Пищевая промышленность
+  | 'FORESTRY'           // Лесная промышленность
+  | 'MINING'             // Горнодобывающая промышленность
+  | 'MACHINE_BUILDING'   // Машиностроение
+  | 'FINANCE'            // Финансы и банковское дело
+  | 'PUBLIC_SERVICE';    // Государственная служба
+
 // Типы ролей по уровням организаций
 export type FederalRole = 
   | 'FEDERAL_CHAIRMAN'                    // 1.1. Председатель
@@ -103,6 +127,7 @@ export interface Organization {
   id: string;
   name: string;
   type: OrganizationType;
+  industry: UnionIndustry; // Отрасль профсоюза
   parentId?: string; // Для иерархии организаций
   parentName?: string;
   address: string;
@@ -113,6 +138,61 @@ export interface Organization {
   inn?: string; // ИНН организации
   membersCount: number;
   isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Интерфейс для заявления на вступление в профсоюз
+export interface MembershipApplication {
+  id: string;
+  // Личные данные
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  dateOfBirth: Date;
+  gender: 'MALE' | 'FEMALE';
+  photo?: string;
+  
+  // Образование и работа
+  education: string;
+  specialties: string[]; // Множественные специальности
+  positions: string[]; // Множественные должности
+  
+  // Адрес проживания
+  address: {
+    index: string;
+    region: string;
+    municipality: string;
+    locality: string;
+    street: string;
+    house: string;
+    apartment?: string;
+  };
+  
+  // Контакты
+  phone: string;
+  additionalPhone?: string;
+  email: string;
+  
+  // Дополнительная информация
+  children?: Array<{
+    name: string;
+    dateOfBirth: Date;
+  }>;
+  hobbies: string[];
+  
+  // Данные заявления
+  organizationId: string;
+  organizationName: string;
+  applicationDate: Date;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  reviewedBy?: string;
+  reviewedAt?: Date;
+  rejectionReason?: string;
+  
+  // PDF заявления
+  pdfUrl?: string;
+  
   createdAt: Date;
   updatedAt: Date;
 }

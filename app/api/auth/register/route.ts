@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createToken } from '@/lib/auth';
-import { createUser, findUserByEmail } from '@/lib/db';
+import { createToken, hashPassword } from '@/lib/auth';
 import { canSelfRegister } from '@/lib/role-config';
 import { cookies } from 'next/headers';
 import { OrganizationType } from '@/types';
+import { prisma } from '@/lib/database';
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,7 +43,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Проверяем, существует ли пользователь с таким email
-    const existingUser = await findUserByEmail(email);
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
     if (existingUser) {
       return NextResponse.json(
         { error: 'Пользователь с таким email уже существует' },
@@ -63,15 +65,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Создаем пользователя в базе данных
-    const newUser = await createUser({
-      email,
-      password,
-      firstName,
-      lastName,
-      middleName: middleName || undefined,
-      phone,
-      role: role || 'PRIMARY_MEMBER', // По умолчанию - член профсоюза
-      organizationId: finalOrganizationId
+    const hashedPassword = await hashPassword(password);
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        middleName: middleName || null,
+        phone,
+        role: role || 'PRIMARY_MEMBER', // По умолчанию - член профсоюза
+        organizationId: finalOrganizationId || null,
+        isActive: true,
+        emailVerified: false,
+        membershipValidated: false
+      }
     });
 
     // Генерируем JWT токен

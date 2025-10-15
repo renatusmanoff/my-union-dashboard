@@ -194,7 +194,7 @@ export default function DashboardPage() {
                     Срок: 15 декабря
                   </p>
                 </div>
-                <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 rounded-full">
+                <span className="px-2 py-1 text-xs font-medium bg-orange-500 text-white rounded-full">
                   В работе
                 </span>
               </div>
@@ -207,7 +207,7 @@ export default function DashboardPage() {
                     Срок: 20 декабря
                   </p>
                 </div>
-                <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">
+                <span className="px-2 py-1 text-xs font-medium bg-blue-500 text-white rounded-full">
                   Планируется
                 </span>
               </div>
@@ -220,7 +220,7 @@ export default function DashboardPage() {
                     Срок: 25 декабря
                   </p>
                 </div>
-                <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 rounded-full">
+                <span className="px-2 py-1 text-xs font-medium bg-red-500 text-white rounded-full">
                   Срочно
                 </span>
               </div>

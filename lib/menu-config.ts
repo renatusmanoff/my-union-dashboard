@@ -7,14 +7,14 @@ export const menuConfig: MenuItem[] = [
     id: 'super-admin-dashboard',
     label: 'Панель управления',
     href: '/dashboard/super-admin',
-    icon: 'shield-check',
+    icon: 'home',
     roles: ['SUPER_ADMIN']
   },
   {
     id: 'membership-validation',
     label: 'Валидация членства',
     href: '/dashboard/membership-validation',
-    icon: 'check-circle',
+    icon: 'shield-check',
     roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
   },
   {
@@ -40,7 +40,7 @@ export const menuConfig: MenuItem[] = [
   },
   {
     id: 'organizations',
-    label: 'Организации и Администраторы',
+    label: 'Организации',
     href: '/dashboard/organizations',
     icon: 'building-office',
     roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
@@ -105,7 +105,7 @@ export const menuConfig: MenuItem[] = [
     id: 'discounts',
     label: 'Скидки и льготы',
     href: '/dashboard/discounts',
-    icon: 'gift',
+    icon: 'credit-card',
     roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
   },
   {
@@ -114,6 +114,35 @@ export const menuConfig: MenuItem[] = [
     href: '/dashboard/partners',
     icon: 'handshake',
     roles: ['SUPER_ADMIN']
+  },
+  // Пункты меню для членов профсоюза
+  {
+    id: 'member-dashboard',
+    label: 'Панель управления',
+    href: '/dashboard',
+    icon: 'home',
+    roles: ['PRIMARY_MEMBER']
+  },
+  {
+    id: 'member-documents',
+    label: 'Документооборот',
+    href: '/dashboard/member-documents',
+    icon: 'document-text',
+    roles: ['PRIMARY_MEMBER']
+  },
+  {
+    id: 'member-profile',
+    label: 'Мой профиль',
+    href: '/dashboard/profile',
+    icon: 'user',
+    roles: ['PRIMARY_MEMBER']
+  },
+  {
+    id: 'member-benefits',
+    label: 'Льготы и скидки',
+    href: '/dashboard/benefits',
+    icon: 'gift',
+    roles: ['PRIMARY_MEMBER']
   }
 ];
 

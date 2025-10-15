@@ -2,267 +2,407 @@
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import type { MembershipValidation } from '@/types';
+import { MembershipApplication } from '@/types';
+import { 
+  EyeIcon, 
+  DocumentArrowDownIcon, 
+  CheckIcon, 
+  XMarkIcon 
+} from '@heroicons/react/24/outline';
+import { cachedFetch } from '@/lib/cache';
 
 export default function MembershipValidationPage() {
-  const [validations, setValidations] = useState<MembershipValidation[]>([]);
-  // const [isLoading, setIsLoading] = useState(true); // TODO: Использовать для загрузки
-  const [selectedValidation, setSelectedValidation] = useState<MembershipValidation | null>(null);
-  const [validationNotes, setValidationNotes] = useState('');
+  const [applications, setApplications] = useState<MembershipApplication[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedApplication, setSelectedApplication] = useState<MembershipApplication | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('ALL');
+  const [generatingPDF, setGeneratingPDF] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchValidations();
-  }, []);
+    fetchApplications();
+  }, [statusFilter]);
 
-  const fetchValidations = async () => {
+  const fetchApplications = async () => {
     try {
-      // setIsLoading(true);
-      const response = await fetch('/api/membership/validation');
+      setIsLoading(true);
+      const params = new URLSearchParams();
+      if (statusFilter !== 'ALL') {
+        params.append('status', statusFilter);
+      }
+
+      const response = await cachedFetch(`/api/membership/application?${params}`, undefined, 30 * 1000); // 30 seconds cache
       const data = await response.json();
 
       if (response.ok) {
-        setValidations(data.validations);
+        setApplications(data.applications);
       } else {
-        console.error('Error fetching validations:', data.error);
+        console.error('Error fetching applications:', data.error);
       }
     } catch (error) {
-      console.error('Error fetching validations:', error);
+      console.error('Error fetching applications:', error);
     } finally {
-      // setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleValidation = async (validationId: string, status: 'APPROVED' | 'REJECTED') => {
+  const handleApplicationStatus = async (applicationId: string, status: 'APPROVED' | 'REJECTED') => {
     try {
-      const response = await fetch('/api/membership/validation', {
+      const response = await fetch(`/api/membership/application/${applicationId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          validationId,
           status,
-          notes: validationNotes
+          rejectionReason: status === 'REJECTED' ? rejectionReason : undefined
         }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        setValidations(validations.map(v => 
-          v.id === validationId ? data.validation : v
-        ));
-        setSelectedValidation(null);
-        setValidationNotes('');
-        if (data.emailSent) {
-          alert(`Членство ${status === 'APPROVED' ? 'одобрено' : 'отклонено'} и уведомление отправлено!`);
-        } else {
-          alert(`Членство ${status === 'APPROVED' ? 'одобрено' : 'отклонено'}, но не удалось отправить уведомление`);
-        }
+        alert(data.message);
+        setSelectedApplication(null);
+        setRejectionReason('');
+        fetchApplications();
       } else {
-        alert(data.error || 'Ошибка при валидации');
+        alert(data.error || 'Ошибка при обработке заявления');
       }
     } catch (error) {
-      console.error('Error validating membership:', error);
-      alert('Ошибка при валидации');
+      console.error('Error updating application:', error);
+      alert('Ошибка при обработке заявления');
+    }
+  };
+
+  const handleGeneratePDF = async (applicationId: string) => {
+    try {
+      setGeneratingPDF(applicationId);
+      const response = await fetch(`/api/membership/application/${applicationId}/pdf`);
+      const data = await response.json();
+
+      if (response.ok) {
+        // Открываем PDF в новой вкладке
+        window.open(data.pdfUrl, '_blank');
+        alert('PDF заявления успешно сгенерирован');
+      } else {
+        alert(data.error || 'Ошибка при генерации PDF');
+      }
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Ошибка при генерации PDF');
+    } finally {
+      setGeneratingPDF(null);
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-orange-500 text-white';
       case 'APPROVED':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-500 text-white';
       case 'REJECTED':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-500 text-white';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-500 text-white';
     }
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusLabel = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return 'Ожидает';
+        return 'На рассмотрении';
       case 'APPROVED':
         return 'Одобрено';
       case 'REJECTED':
         return 'Отклонено';
       default:
-        return 'Неизвестно';
+        return status;
     }
   };
 
   return (
     <DashboardLayout userRole="SUPER_ADMIN">
       <div className="p-6" style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">Валидация членства</h1>
-          <p className="text-gray-400">Проверка и подтверждение членства в профсоюзе</p>
-        </div>
-
-        {/* Статистика */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="card p-6 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-400">Ожидают валидации</p>
-                <p className="text-2xl font-bold text-yellow-500">
-                  {validations.filter(v => v.status === 'PENDING').length}
-                </p>
-              </div>
-              <div className="p-3 bg-yellow-500 rounded-full">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold mb-2">Валидация заявлений</h1>
+              <p className="text-gray-400">Рассмотрение заявлений на вступление в профсоюз</p>
+            </div>
+            <div className="flex space-x-3">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="px-4 py-2 rounded-lg"
+                style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
+              >
+                <option value="ALL">Все заявления</option>
+                <option value="PENDING">На рассмотрении</option>
+                <option value="APPROVED">Одобренные</option>
+                <option value="REJECTED">Отклоненные</option>
+              </select>
             </div>
           </div>
 
-          <div className="card p-6 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-400">Одобрено</p>
-                <p className="text-2xl font-bold text-green-500">
-                  {validations.filter(v => v.status === 'APPROVED').length}
-                </p>
+          {/* Applications List */}
+          <div className="card rounded-lg overflow-hidden">
+            {isLoading ? (
+              <div className="p-8 text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p className="mt-2 text-gray-400">Загрузка заявлений...</p>
               </div>
-              <div className="p-3 bg-green-500 rounded-full">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr style={{ backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--card-border)' }}>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Заявитель
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Организация
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Дата подачи
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Статус
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Действия
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y" style={{ borderColor: 'var(--card-border)' }}>
+                    {applications.map((application) => (
+                      <tr key={application.id}>
+                        <td className="px-6 py-4">
+                          <div>
+                            <div className="text-sm font-medium">
+                              {application.lastName} {application.firstName} {application.middleName}
+                            </div>
+                            <div className="text-sm text-gray-400">{application.email}</div>
+                            <div className="text-sm text-gray-400">{application.phone}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          {application.organizationName}
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          {new Date(application.applicationDate).toLocaleDateString('ru-RU')}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(application.status)}`}>
+                            {getStatusLabel(application.status)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => setSelectedApplication(application)}
+                              className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                              title="Просмотр"
+                            >
+                              <EyeIcon className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => handleGeneratePDF(application.id)}
+                              disabled={generatingPDF === application.id}
+                              className="p-2 text-purple-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors disabled:opacity-50"
+                              title="PDF"
+                            >
+                              <DocumentArrowDownIcon className="w-5 h-5" />
+                            </button>
+                            {application.status === 'PENDING' && (
+                              <>
+                                <button
+                                  onClick={() => handleApplicationStatus(application.id, 'APPROVED')}
+                                  className="p-2 text-green-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                                  title="Одобрить"
+                                >
+                                  <CheckIcon className="w-5 h-5" />
+                                </button>
+                                <button
+                                  onClick={() => setSelectedApplication(application)}
+                                  className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                  title="Отклонить"
+                                >
+                                  <XMarkIcon className="w-5 h-5" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            </div>
+            )}
           </div>
 
-          <div className="card p-6 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-400">Отклонено</p>
-                <p className="text-2xl font-bold text-red-500">
-                  {validations.filter(v => v.status === 'REJECTED').length}
-                </p>
-              </div>
-              <div className="p-3 bg-red-500 rounded-full">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div>
+          {/* Application Details Modal */}
+          {selectedApplication && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">
+                    Заявление на вступление в профсоюз
+                  </h3>
+                  <button
+                    onClick={() => setSelectedApplication(null)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
 
-        {/* Список валидаций */}
-        <div className="card rounded-lg overflow-hidden">
-          <div className="p-6 border-b" style={{ borderColor: 'var(--card-border)' }}>
-            <h3 className="text-lg font-semibold">Заявки на членство</h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr style={{ backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--card-border)' }}>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Пользователь</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Организация</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Дата заявки</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Статус</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Действия</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y" style={{ borderColor: 'var(--card-border)' }}>
-                {validations.map((validation) => (
-                  <tr key={validation.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium">Пользователь #{validation.userId}</div>
-                        <div className="text-sm text-gray-400">{validation.notes}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      Организация #{validation.organizationId}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {new Date(validation.requestedAt).toLocaleDateString('ru-RU')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(validation.status)}`}>
-                        {getStatusText(validation.status)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {validation.status === 'PENDING' && (
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => setSelectedValidation(validation)}
-                            className="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
-                          >
-                            Рассмотреть
-                          </button>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Личные данные */}
+                  <div>
+                    <h4 className="font-medium mb-3">Личные данные</h4>
+                    <div className="space-y-2 text-sm">
+                      <p><span className="font-medium">ФИО:</span> {selectedApplication.lastName} {selectedApplication.firstName} {selectedApplication.middleName}</p>
+                      <p><span className="font-medium">Дата рождения:</span> {new Date(selectedApplication.dateOfBirth).toLocaleDateString('ru-RU')}</p>
+                      <p><span className="font-medium">Пол:</span> {selectedApplication.gender === 'MALE' ? 'Мужской' : 'Женский'}</p>
+                      <p><span className="font-medium">Email:</span> {selectedApplication.email}</p>
+                      <p><span className="font-medium">Телефон:</span> {selectedApplication.phone}</p>
+                      {selectedApplication.additionalPhone && (
+                        <p><span className="font-medium">Доп. телефон:</span> {selectedApplication.additionalPhone}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Образование и работа */}
+                  <div>
+                    <h4 className="font-medium mb-3">Образование и работа</h4>
+                    <div className="space-y-2 text-sm">
+                      <p><span className="font-medium">Образование:</span> {selectedApplication.education}</p>
+                      {selectedApplication.specialties.length > 0 && (
+                        <div>
+                          <span className="font-medium">Специальности:</span>
+                          <ul className="list-disc list-inside ml-2">
+                            {selectedApplication.specialties.map((spec, index) => (
+                              <li key={index}>{spec}</li>
+                            ))}
+                          </ul>
                         </div>
                       )}
-                      {validation.status !== 'PENDING' && (
-                        <span className="text-xs text-gray-400">
-                          {validation.validatedAt && new Date(validation.validatedAt).toLocaleDateString('ru-RU')}
-                        </span>
+                      {selectedApplication.positions.length > 0 && (
+                        <div>
+                          <span className="font-medium">Должности:</span>
+                          <ul className="list-disc list-inside ml-2">
+                            {selectedApplication.positions.map((pos, index) => (
+                              <li key={index}>{pos}</li>
+                            ))}
+                          </ul>
+                        </div>
                       )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                    </div>
+                  </div>
 
-        {/* Модальное окно для валидации */}
-        {selectedValidation && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="card p-6 rounded-lg max-w-md w-full mx-4">
-              <h3 className="text-lg font-semibold mb-4">Валидация членства</h3>
-              <div className="mb-4">
-                <p className="text-sm text-gray-400 mb-2">Пользователь:</p>
-                <p className="font-medium">Пользователь #{selectedValidation.userId}</p>
-              </div>
-              <div className="mb-4">
-                <p className="text-sm text-gray-400 mb-2">Организация:</p>
-                <p className="font-medium">Организация #{selectedValidation.organizationId}</p>
-              </div>
-              <div className="mb-4">
-                <p className="text-sm text-gray-400 mb-2">Примечания:</p>
-                <textarea
-                  value={validationNotes}
-                  onChange={(e) => setValidationNotes(e.target.value)}
-                  placeholder="Добавьте примечания..."
-                  className="w-full px-3 py-2 rounded-lg"
-                  style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
-                  rows={3}
-                />
-              </div>
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => handleValidation(selectedValidation.id, 'APPROVED')}
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  Одобрить
-                </button>
-                <button
-                  onClick={() => handleValidation(selectedValidation.id, 'REJECTED')}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Отклонить
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedValidation(null);
-                    setValidationNotes('');
-                  }}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  Отмена
-                </button>
+                  {/* Адрес */}
+                  <div>
+                    <h4 className="font-medium mb-3">Адрес проживания</h4>
+                    <div className="text-sm">
+                      <p>{selectedApplication.address.index}, {selectedApplication.address.region}</p>
+                      <p>{selectedApplication.address.municipality}, {selectedApplication.address.locality}</p>
+                      <p>{selectedApplication.address.street}, д. {selectedApplication.address.house}</p>
+                      {selectedApplication.address.apartment && (
+                        <p>кв. {selectedApplication.address.apartment}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Дополнительная информация */}
+                  <div>
+                    <h4 className="font-medium mb-3">Дополнительная информация</h4>
+                    <div className="space-y-2 text-sm">
+                      {selectedApplication.children && selectedApplication.children.length > 0 && (
+                        <div>
+                          <span className="font-medium">Дети:</span>
+                          <ul className="list-disc list-inside ml-2">
+                            {selectedApplication.children.map((child, index) => (
+                              <li key={index}>
+                                {child.name} ({new Date(child.dateOfBirth).toLocaleDateString('ru-RU')})
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {selectedApplication.hobbies.length > 0 && (
+                        <div>
+                          <span className="font-medium">Увлечения:</span>
+                          <p>{selectedApplication.hobbies.join(', ')}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* PDF заявления */}
+                {selectedApplication.pdfUrl && (
+                  <div className="mt-6">
+                    <h4 className="font-medium mb-3">PDF заявления</h4>
+                    <a
+                      href={selectedApplication.pdfUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Скачать PDF заявления
+                    </a>
+                  </div>
+                )}
+
+                {/* Действия */}
+                {selectedApplication.status === 'PENDING' && (
+                  <div className="mt-6 border-t pt-4">
+                    <div className="flex space-x-4">
+                      <button
+                        onClick={() => handleApplicationStatus(selectedApplication.id, 'APPROVED')}
+                        className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                      >
+                        Одобрить заявление
+                      </button>
+                      <div className="flex-1">
+                        <textarea
+                          value={rejectionReason}
+                          onChange={(e) => setRejectionReason(e.target.value)}
+                          placeholder="Причина отклонения..."
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          rows={3}
+                        />
+                        <button
+                          onClick={() => handleApplicationStatus(selectedApplication.id, 'REJECTED')}
+                          disabled={!rejectionReason.trim()}
+                          className="w-full mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Отклонить заявление
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selectedApplication.status === 'REJECTED' && selectedApplication.rejectionReason && (
+                  <div className="mt-6 border-t pt-4">
+                    <h4 className="font-medium mb-2">Причина отклонения:</h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{selectedApplication.rejectionReason}</p>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </DashboardLayout>
   );

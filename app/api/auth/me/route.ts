@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { findUserById } from '@/lib/db';
+import { prisma } from '@/lib/database';
 
 export async function GET() {
   try {
@@ -14,7 +14,18 @@ export async function GET() {
     }
 
     // Получаем актуальные данные пользователя из базы данных
-    const user = await findUserById(currentUser.id);
+    const user = await prisma.user.findUnique({
+      where: { id: currentUser.id },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            type: true
+          }
+        }
+      }
+    });
     
     if (!user) {
       return NextResponse.json(

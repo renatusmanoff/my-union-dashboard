@@ -61,10 +61,10 @@ const statusLabels = {
 };
 
 const statusColors = {
-  PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-  IN_PROGRESS: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  COMPLETED: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  CANCELLED: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+  PENDING: 'bg-yellow-500 text-white',
+  IN_PROGRESS: 'bg-blue-500 text-white',
+  COMPLETED: 'bg-green-500 text-white',
+  CANCELLED: 'bg-red-500 text-white'
 };
 
 const priorityLabels = {
@@ -75,10 +75,10 @@ const priorityLabels = {
 };
 
 const priorityColors = {
-  LOW: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-  MEDIUM: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  HIGH: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-  URGENT: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+  LOW: 'bg-gray-500 text-white',
+  MEDIUM: 'bg-blue-500 text-white',
+  HIGH: 'bg-orange-500 text-white',
+  URGENT: 'bg-red-500 text-white'
 };
 
 export default function TasksPage() {

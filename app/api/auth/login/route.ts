@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createToken } from '@/lib/auth';
-import { verifyUserPassword } from '@/lib/db';
+import { createToken, verifyPassword } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { UserRole, OrganizationType } from '@/types';
+import { prisma } from '@/lib/database';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,9 +17,29 @@ export async function POST(request: NextRequest) {
     }
 
     // Проверяем пользователя и пароль в базе данных
-    const user = await verifyUserPassword(email, password);
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            type: true
+          }
+        }
+      }
+    });
     
     if (!user) {
+      return NextResponse.json(
+        { error: 'Неверный email или пароль' },
+        { status: 401 }
+      );
+    }
+
+    // Проверяем пароль
+    const isPasswordValid = await verifyPassword(password, user.password);
+    if (!isPasswordValid) {
       return NextResponse.json(
         { error: 'Неверный email или пароль' },
         { status: 401 }
