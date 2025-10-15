@@ -1,27 +1,7 @@
-import { prisma } from './prisma';
-import { hashPassword, verifyPassword } from './auth';
-import { UserRole } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { hashPassword } from './auth';
 
-// Интерфейс для создания пользователя
-export interface CreateUserData {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  middleName?: string;
-  phone: string;
-  role?: UserRole;
-  organizationId?: string;
-}
-
-// Интерфейс для обновления пользователя
-export interface UpdateUserData {
-  firstName?: string;
-  lastName?: string;
-  middleName?: string;
-  phone?: string;
-  organizationId?: string;
-}
+const prisma = new PrismaClient();
 
 // Функция для поиска пользователя по email
 export async function findUserByEmail(email: string) {
@@ -44,28 +24,19 @@ export async function findUserById(id: string) {
 }
 
 // Функция для создания пользователя
-export async function createUser(userData: CreateUserData) {
+export async function createUser(userData: {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  phone: string;
+  role: string;
+  organizationId?: string;
+}) {
   try {
     // Хешируем пароль
     const hashedPassword = await hashPassword(userData.password);
-    
-    // Если organizationId не указан, создаем пользователя без организации
-    // или находим подходящую организацию по умолчанию
-    let organizationId = userData.organizationId;
-    
-    if (!organizationId) {
-      // Ищем первичную организацию по умолчанию
-      const defaultOrg = await prisma.organization.findFirst({
-        where: { type: 'PRIMARY' }
-      });
-      
-      if (defaultOrg) {
-        organizationId = defaultOrg.id;
-      } else {
-        // Если нет первичной организации, создаем пользователя без организации
-        organizationId = undefined;
-      }
-    }
     
     // Создаем пользователя
     const baseUserData = {
@@ -75,15 +46,15 @@ export async function createUser(userData: CreateUserData) {
       lastName: userData.lastName,
       middleName: userData.middleName,
       phone: userData.phone,
-      role: userData.role || 'PRIMARY_MEMBER',
+      role: (userData.role || 'PRIMARY_MEMBER') as 'PRIMARY_MEMBER',
       isActive: true,
       emailVerified: false,
       membershipValidated: false
     };
 
     // Добавляем organizationId только если он определен
-    const userDataToCreate = organizationId 
-      ? { ...baseUserData, organizationId }
+    const userDataToCreate = userData.organizationId 
+      ? { ...baseUserData, organizationId: userData.organizationId }
       : baseUserData;
 
     const user = await prisma.user.create({
@@ -100,34 +71,19 @@ export async function createUser(userData: CreateUserData) {
   }
 }
 
-// Функция для обновления пользователя
-export async function updateUser(id: string, userData: UpdateUserData) {
-  try {
-    const user = await prisma.user.update({
-      where: { id },
-      data: userData,
-      include: {
-        organization: true
-      }
-    });
-    
-    return user;
-  } catch (error) {
-    console.error('Error updating user:', error);
-    throw error;
-  }
-}
-
-// Функция для проверки пароля
+// Функция для проверки пароля пользователя
 export async function verifyUserPassword(email: string, password: string) {
   try {
     const user = await findUserByEmail(email);
+    
     if (!user) {
       return null;
     }
+
+    const { verifyPassword } = await import('./auth');
+    const isValid = await verifyPassword(password, user.password);
     
-    const isPasswordValid = await verifyPassword(password, user.password);
-    if (!isPasswordValid) {
+    if (!isValid) {
       return null;
     }
     
@@ -152,18 +108,19 @@ export async function createOrganization(data: {
   address: string;
   phone: string;
   email: string;
-  director: string;
+  chairmanName?: string;
 }) {
   try {
     const organization = await prisma.organization.create({
       data: {
         name: data.name,
         type: data.type as 'FEDERAL' | 'REGIONAL' | 'LOCAL' | 'PRIMARY',
+        industry: 'EDUCATION',
         parentId: data.parentId,
         address: data.address,
         phone: data.phone,
         email: data.email,
-        director: data.director,
+        chairmanName: data.chairmanName,
         membersCount: 0,
         isActive: true
       }
@@ -176,15 +133,4 @@ export async function createOrganization(data: {
   }
 }
 
-// Функция для поиска организаций
-export async function findOrganizations() {
-  try {
-    return await prisma.organization.findMany({
-      where: { isActive: true },
-      orderBy: { name: 'asc' }
-    });
-  } catch (error) {
-    console.error('Error finding organizations:', error);
-    return [];
-  }
-}
+export { prisma };

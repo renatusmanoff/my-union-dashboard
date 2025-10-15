@@ -1,75 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/database';
+import { NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
 
-// POST - публичный поиск членов профсоюза (без авторизации)
-export async function POST(request: NextRequest) {
+export async function GET() {
   try {
-    const body = await request.json();
-    const { organizationId, searchTerm, searchType } = body;
-
-    if (!organizationId || !searchTerm) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return NextResponse.json(
-        { error: 'Необходимо указать организацию и поисковый запрос' },
-        { status: 400 }
+        { error: "Пользователь не авторизован" },
+        { status: 401 }
       );
     }
 
-    // Строим фильтры для поиска
-    const where: any = {
-      organizationId,
-      isActive: true
-    };
-
-    if (searchType === 'name') {
-      // Поиск по ФИО
-      const searchLower = searchTerm.toLowerCase();
-      where.OR = [
-        { firstName: { contains: searchLower, mode: 'insensitive' } },
-        { lastName: { contains: searchLower, mode: 'insensitive' } },
-        { middleName: { contains: searchLower, mode: 'insensitive' } }
-      ];
-    } else if (searchType === 'email') {
-      // Поиск по email
-      where.email = { contains: searchTerm, mode: 'insensitive' };
-    } else if (searchType === 'phone') {
-      // Поиск по телефону
-      const cleanSearchTerm = searchTerm.replace(/\D/g, ''); // Убираем все не-цифры
-      where.phone = { contains: cleanSearchTerm };
-    }
-
-    const members = await prisma.user.findMany({
-      where,
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        middleName: true,
-        email: true,
-        phone: true,
-        role: true,
-        organizationId: true,
-        isActive: true,
-        createdAt: true,
-        organization: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    // TODO: Реализовать функционал
+    const data: unknown[] = [];
 
     return NextResponse.json({
       success: true,
-      members,
-      count: members.length
+      data
     });
 
   } catch (error) {
-    console.error('Public search members error:', error);
+    console.error("API error:", error);
     return NextResponse.json(
-      { error: 'Внутренняя ошибка сервера' },
+      { error: "Внутренняя ошибка сервера" },
       { status: 500 }
     );
   }

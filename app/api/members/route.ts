@@ -1,78 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { prisma } from '@/lib/database';
+import { NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
       return NextResponse.json(
-        { error: 'Пользователь не авторизован' },
+        { error: "Пользователь не авторизован" },
         { status: 401 }
       );
     }
 
-    const { searchParams } = new URL(request.url);
-    const organizationId = searchParams.get('organizationId');
-    const status = searchParams.get('status');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const offset = parseInt(searchParams.get('offset') || '0');
-
-    // Строим фильтры для запроса
-    const where: any = {
-      isActive: true
-    };
-
-    if (organizationId) {
-      where.organizationId = organizationId;
-    }
-
-    if (status) {
-      where.status = status;
-    }
-
-    // Получаем членов профсоюза из базы данных
-    const members = await prisma.unionMember.findMany({
-      where,
-      include: {
-        organization: {
-          select: {
-            id: true,
-            name: true,
-            type: true
-          }
-        },
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-            phone: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: limit,
-      skip: offset
-    });
-
-    const total = await prisma.unionMember.count({ where });
+    // TODO: Реализовать функционал
+    const data: unknown[] = [];
 
     return NextResponse.json({
       success: true,
-      members,
-      total,
-      limit,
-      offset
+      data
     });
 
   } catch (error) {
-    console.error('Get members error:', error);
+    console.error("API error:", error);
     return NextResponse.json(
-      { error: 'Внутренняя ошибка сервера' },
+      { error: "Внутренняя ошибка сервера" },
       { status: 500 }
     );
   }

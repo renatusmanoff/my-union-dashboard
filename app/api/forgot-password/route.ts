@@ -1,28 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
+import { getCurrentUser } from "@/lib/auth";
 
-export async function POST(request: NextRequest) {
+export async function GET() {
   try {
-    const { email } = await request.json();
-
-    if (!email) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       return NextResponse.json(
-        { error: 'Email обязателен' },
-        { status: 400 }
+        { error: "Пользователь не авторизован" },
+        { status: 401 }
       );
     }
 
-    // TODO: Реализовать логику восстановления пароля
-    console.log('Password reset requested for:', email);
+    // TODO: Реализовать функционал
+    const data: unknown[] = [];
 
     return NextResponse.json({
       success: true,
-      message: 'Инструкции по восстановлению пароля отправлены на email'
+      data
     });
 
   } catch (error) {
-    console.error('Forgot password error:', error);
+    console.error("API error:", error);
     return NextResponse.json(
-      { error: 'Внутренняя ошибка сервера' },
+      { error: "Внутренняя ошибка сервера" },
       { status: 500 }
     );
   }

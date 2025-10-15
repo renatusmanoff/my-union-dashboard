@@ -267,7 +267,8 @@ export default function OrganizationsPage() {
           address: '',
           phone: '',
           email: '',
-          chairmanName: ''
+          chairmanName: '',
+          inn: ''
         });
         fetchOrganizations();
       } else {
@@ -312,7 +313,8 @@ export default function OrganizationsPage() {
       address: org.address,
       phone: org.phone,
       email: org.email,
-      chairmanName: org.chairmanName || ''
+      chairmanName: org.chairmanName || '',
+      inn: org.inn || ''
     });
   };
 
@@ -326,7 +328,8 @@ export default function OrganizationsPage() {
       address: '',
       phone: '',
       email: '',
-      chairmanName: ''
+      chairmanName: '',
+      inn: ''
     });
   };
 

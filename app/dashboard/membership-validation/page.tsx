@@ -135,7 +135,7 @@ export default function MembershipValidationPage() {
             <div className="flex space-x-3">
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
+                onChange={(e) => setStatusFilter(e.target.value as 'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL')}
                 className="px-4 py-2 rounded-lg"
                 style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
               >

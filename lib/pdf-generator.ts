@@ -1,6 +1,6 @@
 import puppeteer from 'puppeteer';
 
-export async function generateApplicationPDF(application: any): Promise<string> {
+export async function generateApplicationPDF(application: unknown): Promise<string> {
   try {
     const browser = await puppeteer.launch({
       headless: true,
@@ -32,7 +32,7 @@ export async function generateApplicationPDF(application: any): Promise<string> 
     const fs = await import('fs');
     const path = await import('path');
     
-    const fileName = `application_${application.id}_${Date.now()}.pdf`;
+    const fileName = `application_${(application as { id: string }).id}_${Date.now()}.pdf`;
     const filePath = path.join(process.cwd(), 'public', 'documents', fileName);
     
     // Создаем папку если её нет
@@ -52,7 +52,7 @@ export async function generateApplicationPDF(application: any): Promise<string> 
   }
 }
 
-function generateApplicationHTML(application: any): string {
+function generateApplicationHTML(application: unknown): string {
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('ru-RU', {
       year: 'numeric',
@@ -151,7 +151,7 @@ function generateApplicationHTML(application: any): string {
     </head>
     <body>
       <div class="header">
-        <h1>${application.organizationName}</h1>
+        <h1>${(application as { [key: string]: unknown }).organizationName}</h1>
         <p>Заявление на вступление в профсоюз</p>
       </div>
 
@@ -161,7 +161,7 @@ function generateApplicationHTML(application: any): string {
 
       <div class="content">
         <p style="text-indent: 20px; margin-bottom: 20px;">
-          Прошу принять меня в члены профсоюза <strong>${application.organizationName}</strong>.
+          Прошу принять меня в члены профсоюза <strong>${(application as { [key: string]: unknown }).organizationName}</strong>.
         </p>
 
         <div class="section">
@@ -169,29 +169,29 @@ function generateApplicationHTML(application: any): string {
           
           <div class="field">
             <span class="field-label">Фамилия:</span>
-            <span class="field-value">${application.lastName}</span>
+            <span class="field-value">${(application as { [key: string]: unknown }).lastName}</span>
           </div>
           
           <div class="field">
             <span class="field-label">Имя:</span>
-            <span class="field-value">${application.firstName}</span>
+            <span class="field-value">${(application as { [key: string]: unknown }).firstName}</span>
           </div>
           
-          ${application.middleName ? `
+          ${(application as { [key: string]: unknown }).middleName ? `
           <div class="field">
             <span class="field-label">Отчество:</span>
-            <span class="field-value">${application.middleName}</span>
+            <span class="field-value">${(application as { [key: string]: unknown }).middleName}</span>
           </div>
           ` : ''}
           
           <div class="field">
             <span class="field-label">Дата рождения:</span>
-            <span class="field-value">${formatDate(application.dateOfBirth)}</span>
+             <span class="field-value">${formatDate((application as { [key: string]: unknown }).dateOfBirth as Date)}</span>
           </div>
           
           <div class="field">
             <span class="field-label">Пол:</span>
-            <span class="field-value">${application.gender === 'MALE' ? 'Мужской' : 'Женский'}</span>
+            <span class="field-value">${(application as { [key: string]: unknown }).gender === 'MALE' ? 'Мужской' : 'Женский'}</span>
           </div>
         </div>
 
@@ -200,19 +200,19 @@ function generateApplicationHTML(application: any): string {
           
           <div class="field">
             <span class="field-label">Телефон:</span>
-            <span class="field-value">${application.phone}</span>
+            <span class="field-value">${(application as { [key: string]: unknown }).phone}</span>
           </div>
           
-          ${application.additionalPhone ? `
+          ${(application as { [key: string]: unknown }).additionalPhone ? `
           <div class="field">
             <span class="field-label">Доп. телефон:</span>
-            <span class="field-value">${application.additionalPhone}</span>
+            <span class="field-value">${(application as { [key: string]: unknown }).additionalPhone}</span>
           </div>
           ` : ''}
           
           <div class="field">
             <span class="field-label">Email:</span>
-            <span class="field-value">${application.email}</span>
+            <span class="field-value">${(application as { [key: string]: unknown }).email}</span>
           </div>
         </div>
 
@@ -222,38 +222,38 @@ function generateApplicationHTML(application: any): string {
           <div class="address-block">
             <div class="field">
               <span class="field-label">Индекс:</span>
-              <span class="field-value">${application.addressIndex}</span>
+              <span class="field-value">${(application as { [key: string]: unknown }).addressIndex}</span>
             </div>
             
             <div class="field">
               <span class="field-label">Регион:</span>
-              <span class="field-value">${application.addressRegion}</span>
+              <span class="field-value">${(application as { [key: string]: unknown }).addressRegion}</span>
             </div>
             
             <div class="field">
               <span class="field-label">Муниципальное образование:</span>
-              <span class="field-value">${application.addressMunicipality}</span>
+              <span class="field-value">${(application as { [key: string]: unknown }).addressMunicipality}</span>
             </div>
             
             <div class="field">
               <span class="field-label">Населенный пункт:</span>
-              <span class="field-value">${application.addressLocality}</span>
+              <span class="field-value">${(application as { [key: string]: unknown }).addressLocality}</span>
             </div>
             
             <div class="field">
               <span class="field-label">Улица:</span>
-              <span class="field-value">${application.addressStreet}</span>
+              <span class="field-value">${(application as { [key: string]: unknown }).addressStreet}</span>
             </div>
             
             <div class="field">
               <span class="field-label">Дом/Здание:</span>
-              <span class="field-value">${application.addressHouse}</span>
+              <span class="field-value">${(application as { [key: string]: unknown }).addressHouse}</span>
             </div>
             
-            ${application.addressApartment ? `
+            ${(application as { [key: string]: unknown }).addressApartment ? `
             <div class="field">
               <span class="field-label">Квартира:</span>
-              <span class="field-value">${application.addressApartment}</span>
+              <span class="field-value">${(application as { [key: string]: unknown }).addressApartment}</span>
             </div>
             ` : ''}
           </div>
@@ -264,41 +264,41 @@ function generateApplicationHTML(application: any): string {
           
           <div class="field">
             <span class="field-label">Образование:</span>
-            <span class="field-value">${application.education}</span>
+            <span class="field-value">${(application as { [key: string]: unknown }).education}</span>
           </div>
           
-          ${Array.isArray(application.specialties) && application.specialties.length > 0 ? `
+           ${Array.isArray((application as { [key: string]: unknown }).specialties) && ((application as { [key: string]: unknown }).specialties as unknown[]).length > 0 ? `
           <div class="field">
             <span class="field-label">Специальности:</span>
-            <span class="field-value">${application.specialties.join(', ')}</span>
+            <span class="field-value">${((application as { [key: string]: unknown }).specialties as string[]).join(', ')}</span>
           </div>
           ` : ''}
           
-          ${Array.isArray(application.positions) && application.positions.length > 0 ? `
+          ${Array.isArray((application as { [key: string]: unknown }).positions) && ((application as { [key: string]: unknown }).positions as unknown[]).length > 0 ? `
           <div class="field">
             <span class="field-label">Должности:</span>
-            <span class="field-value">${application.positions.join(', ')}</span>
+            <span class="field-value">${((application as { [key: string]: unknown }).positions as string[]).join(', ')}</span>
           </div>
           ` : ''}
         </div>
 
-        ${application.children && Array.isArray(application.children) && application.children.length > 0 ? `
+        ${(application as { [key: string]: unknown }).children && Array.isArray((application as { [key: string]: unknown }).children) && ((application as { [key: string]: unknown }).children as unknown[]).length > 0 ? `
         <div class="section">
           <div class="section-title">5. ДЕТИ</div>
-          ${application.children.map((child: any, index: number) => `
+          ${((application as { [key: string]: unknown }).children as unknown[]).map((child: unknown, index: number) => `
             <div class="field">
               <span class="field-label">Ребенок ${index + 1}:</span>
-              <span class="field-value">${child.name}, дата рождения: ${formatDate(new Date(child.dateOfBirth))}</span>
+              <span class="field-value">${(child as { name: string; dateOfBirth: string }).name}, дата рождения: ${formatDate(new Date((child as { name: string; dateOfBirth: string }).dateOfBirth))}</span>
             </div>
           `).join('')}
         </div>
         ` : ''}
 
-        ${Array.isArray(application.hobbies) && application.hobbies.length > 0 ? `
+        ${Array.isArray((application as { [key: string]: unknown }).hobbies) && ((application as { [key: string]: unknown }).hobbies as unknown[]).length > 0 ? `
         <div class="section">
           <div class="section-title">6. УВЛЕЧЕНИЯ</div>
           <div class="field">
-            <span class="field-value">${application.hobbies.join(', ')}</span>
+            <span class="field-value">${((application as { [key: string]: unknown }).hobbies as string[]).join(', ')}</span>
           </div>
         </div>
         ` : ''}
@@ -313,7 +313,7 @@ function generateApplicationHTML(application: any): string {
       </div>
 
       <div class="date-section">
-        <p>Дата подачи заявления: <strong>${formatDate(application.applicationDate)}</strong></p>
+         <p>Дата подачи заявления: <strong>${formatDate((application as { [key: string]: unknown }).applicationDate as Date)}</strong></p>
       </div>
 
       <div class="signature-section">
@@ -321,7 +321,7 @@ function generateApplicationHTML(application: any): string {
           <p>Заявитель:</p>
           <div class="signature-line"></div>
           <p style="font-size: 12px; margin-top: 5px;">
-            ${application.lastName} ${application.firstName} ${application.middleName || ''}
+            ${(application as { [key: string]: unknown }).lastName} ${(application as { [key: string]: unknown }).firstName} ${(application as { [key: string]: unknown }).middleName || ''}
           </p>
         </div>
         

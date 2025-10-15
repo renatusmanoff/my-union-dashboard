@@ -20,7 +20,6 @@ import {
   ChartBarIcon,
   UserIcon,
   GiftIcon,
-  UserPlusIcon,
   PlusIcon,
   ListBulletIcon,
   Cog6ToothIcon,

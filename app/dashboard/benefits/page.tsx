@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Discount } from '@/types';
 
@@ -59,7 +59,7 @@ const categoryColors = {
 };
 
 export default function BenefitsPage() {
-  const [benefits, setBenefits] = useState<Discount[]>(mockBenefits);
+  const [benefits] = useState<Discount[]>(mockBenefits);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
 
