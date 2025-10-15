@@ -63,7 +63,7 @@ export async function createUser(userData: CreateUserData) {
         organizationId = defaultOrg.id;
       } else {
         // Если нет первичной организации, создаем пользователя без организации
-        organizationId = null;
+        organizationId = undefined;
       }
     }
     
