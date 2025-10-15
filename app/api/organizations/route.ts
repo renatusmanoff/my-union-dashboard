@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
       filteredOrganizations = filteredOrganizations.filter(org =>
         org.name.toLowerCase().includes(search.toLowerCase()) ||
         org.address.toLowerCase().includes(search.toLowerCase()) ||
-        org.chairmanName.toLowerCase().includes(search.toLowerCase())
+        (org.chairmanName && org.chairmanName.toLowerCase().includes(search.toLowerCase()))
       );
     }
 
