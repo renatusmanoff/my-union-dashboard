@@ -4,6 +4,16 @@ import { AdminUser } from '@/types';
 import { getRolesByOrganizationType } from '@/lib/role-config';
 import { sendAdminCredentials } from '@/lib/email';
 
+// Функция для генерации временного пароля
+function generateTemporaryPassword(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+  let password = '';
+  for (let i = 0; i < 12; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Проверяем авторизацию
@@ -27,7 +37,7 @@ export async function POST(request: NextRequest) {
     const { email, firstName, lastName, middleName, phone, role, organizationId, organizationType } = body;
 
     // Валидация
-    if (!email || !firstName || !lastName || !phone || !role || !organizationId || !organizationType) {
+    if (!email || !firstName || !lastName || !phone || !role || !organizationType) {
       return NextResponse.json(
         { error: 'Все поля обязательны' },
         { status: 400 }
@@ -111,24 +121,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-// Функция для генерации временного пароля
-function generateTemporaryPassword(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-  let password = '';
-  
-  // Добавляем обязательные символы
-  password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)]; // Заглавная буква
-  password += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]; // Строчная буква
-  password += '0123456789'[Math.floor(Math.random() * 10)]; // Цифра
-  password += '!@#$%^&*'[Math.floor(Math.random() * 8)]; // Специальный символ
-  
-  // Добавляем случайные символы до длины 12
-  for (let i = 4; i < 12; i++) {
-    password += chars[Math.floor(Math.random() * chars.length)];
-  }
-  
-  // Перемешиваем символы
-  return password.split('').sort(() => Math.random() - 0.5).join('');
 }

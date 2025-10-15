@@ -16,15 +16,33 @@ export default function AdminManagement() {
     middleName: '',
     phone: '',
     role: 'FEDERAL_CHAIRMAN' as UserRole,
-    organizationId: '',
+    organizationId: 'org-1',
     organizationType: 'FEDERAL' as OrganizationType
   });
+  const [availableOrganizations, setAvailableOrganizations] = useState<Array<{id: string, name: string, type: OrganizationType}>>([]);
   const [testEmail, setTestEmail] = useState('');
   const [isTestingSMTP, setIsTestingSMTP] = useState(false);
 
   useEffect(() => {
     fetchAdmins();
+    fetchOrganizations();
   }, []);
+
+  const fetchOrganizations = async () => {
+    try {
+      // Моковые организации для выбора
+      const mockOrgs = [
+        { id: 'org-1', name: 'Центральный комитет профсоюза', type: 'FEDERAL' as OrganizationType },
+        { id: 'org-2', name: 'Московская региональная организация', type: 'REGIONAL' as OrganizationType },
+        { id: 'org-3', name: 'Санкт-Петербургская региональная организация', type: 'REGIONAL' as OrganizationType },
+        { id: 'org-4', name: 'Местная организация г. Москвы', type: 'LOCAL' as OrganizationType },
+        { id: 'org-5', name: 'Первичная организация ООО "Рога и копыта"', type: 'PRIMARY' as OrganizationType }
+      ];
+      setAvailableOrganizations(mockOrgs);
+    } catch (error) {
+      console.error('Error fetching organizations:', error);
+    }
+  };
 
   const fetchAdmins = async () => {
     try {
@@ -96,7 +114,7 @@ export default function AdminManagement() {
           middleName: '',
           phone: '',
           role: 'FEDERAL_CHAIRMAN',
-          organizationId: '',
+          organizationId: 'org-1',
           organizationType: 'FEDERAL'
         });
         if (data.emailSent) {
@@ -253,22 +271,28 @@ export default function AdminManagement() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Тип организации *</label>
+                  <label className="block text-sm font-medium mb-2">Организация *</label>
                   <select
                     required
-                    value={formData.organizationType}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      organizationType: e.target.value as OrganizationType,
-                      role: getRolesByOrganizationType(e.target.value as OrganizationType)[0]?.role || 'FEDERAL_CHAIRMAN'
-                    })}
+                    value={formData.organizationId}
+                    onChange={(e) => {
+                      const selectedOrg = availableOrganizations.find(org => org.id === e.target.value);
+                      setFormData({ 
+                        ...formData, 
+                        organizationId: e.target.value,
+                        organizationType: selectedOrg?.type || 'FEDERAL',
+                        role: getRolesByOrganizationType(selectedOrg?.type || 'FEDERAL')[0]?.role || 'FEDERAL_CHAIRMAN'
+                      });
+                    }}
                     className="w-full px-3 py-2 rounded-lg"
                     style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
                   >
-                    <option value="FEDERAL">Федеральный уровень</option>
-                    <option value="REGIONAL">Региональный уровень</option>
-                    <option value="LOCAL">Местный уровень</option>
-                    <option value="PRIMARY">Первичная организация</option>
+                    <option value="">Выберите организацию</option>
+                    {availableOrganizations.map((org) => (
+                      <option key={org.id} value={org.id}>
+                        {org.name} ({org.type})
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
