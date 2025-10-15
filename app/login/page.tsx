@@ -178,16 +178,18 @@ export default function LoginPage() {
           </div>
         </form>
 
-        {/* Demo Credentials */}
-        <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
-            Демо-доступ:
-          </h3>
-          <p className="text-sm text-blue-700 dark:text-blue-300">
-            Email: admin@example.com<br />
-            Пароль: password
-          </p>
-        </div>
+        {/* Development Credentials - Remove in production */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+              Демо-доступ (только для разработки):
+            </h3>
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              Email: admin@example.com<br />
+              Пароль: password
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

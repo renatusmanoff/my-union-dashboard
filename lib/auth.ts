@@ -51,55 +51,33 @@ export async function getCurrentUser(): Promise<User | null> {
       return null;
     }
 
-    // Здесь должен быть запрос к API для получения данных пользователя
-    // Пока возвращаем моковые данные на основе токена
-    const mockUsers: User[] = [
-      {
-        id: 'super-admin-1',
-        email: 'support@myunion.pro',
-        firstName: 'Супер',
-        lastName: 'Администратор',
-        middleName: 'Системы',
-        phone: '+7 (495) 000-00-00',
-        role: 'SUPER_ADMIN',
-        organizationId: 'org-system',
-        organizationName: 'Система MyUnion',
-        organizationType: 'FEDERAL',
-        avatar: undefined,
-        isActive: true,
-        emailVerified: true,
-        membershipValidated: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      {
-        id: 'admin-1',
-        email: 'admin@example.com',
-        firstName: 'Иван',
-        lastName: 'Иванов',
-        middleName: 'Петрович',
-        phone: '+7 (495) 123-45-67',
-        role: 'FEDERAL_CHAIRMAN',
-        organizationId: 'org-1',
-        organizationName: 'Центральный комитет профсоюза',
-        organizationType: 'FEDERAL',
-        avatar: undefined,
-        isActive: true,
-        emailVerified: true,
-        membershipValidated: true,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ];
-
-    // Находим пользователя по ID из токена
-    const mockUser = mockUsers.find(user => user.id === payload.userId);
+    // Получаем данные пользователя из базы данных
+    const { findUserById } = await import('@/lib/db');
+    const user = await findUserById(payload.userId);
     
-    if (!mockUser) {
+    if (!user) {
       return null;
     }
 
-    return mockUser;
+    // Преобразуем данные пользователя в нужный формат
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      middleName: user.middleName || undefined,
+      phone: user.phone,
+      role: user.role as any,
+      organizationId: user.organizationId,
+      organizationName: user.organization?.name || 'Неизвестная организация',
+      organizationType: user.organization?.type as any || 'PRIMARY',
+      avatar: user.avatar || undefined,
+      isActive: user.isActive,
+      emailVerified: user.emailVerified,
+      membershipValidated: user.membershipValidated,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    };
   } catch {
     return null;
   }

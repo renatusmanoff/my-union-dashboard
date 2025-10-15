@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createToken, verifyPassword } from '@/lib/auth';
+import { createToken } from '@/lib/auth';
+import { verifyUserPassword } from '@/lib/db';
 import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
@@ -14,72 +15,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Здесь должен быть запрос к базе данных
-    // Пока используем моковые данные
-    const mockUsers = [
-      {
-        id: 'super-admin-1',
-        email: 'support@myunion.pro',
-        hashedPassword: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // 123321ZxQ@*
-        firstName: 'Супер',
-        lastName: 'Администратор',
-        middleName: 'Системы',
-        phone: '+7 (495) 000-00-00',
-        role: 'SUPER_ADMIN' as const,
-        organizationId: 'org-system',
-        isActive: true,
-        emailVerified: true
-      },
-      {
-        id: 'admin-1',
-        email: 'admin@example.com',
-        hashedPassword: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
-        firstName: 'Иван',
-        lastName: 'Иванов',
-        middleName: 'Петрович',
-        phone: '+7 (495) 123-45-67',
-        role: 'FEDERAL_CHAIRMAN' as const,
-        organizationId: 'org-1',
-        isActive: true,
-        emailVerified: true
-      }
-    ];
-
-    const mockUser = mockUsers.find(user => user.email === email);
-
-    // Проверяем пользователя
-    if (!mockUser) {
+    // Проверяем пользователя и пароль в базе данных
+    const user = await verifyUserPassword(email, password);
+    
+    if (!user) {
       return NextResponse.json(
         { error: 'Неверный email или пароль' },
         { status: 401 }
       );
     }
 
-    // Проверяем пароль
-    const isPasswordValid = await verifyPassword(password, mockUser.hashedPassword);
-    if (!isPasswordValid) {
+    // Проверяем, активен ли пользователь
+    if (!user.isActive) {
       return NextResponse.json(
-        { error: 'Неверный email или пароль' },
-        { status: 401 }
+        { error: 'Аккаунт заблокирован' },
+        { status: 403 }
       );
     }
 
     // Генерируем JWT токен
     const token = createToken({
-      id: mockUser.id,
-      email: mockUser.email,
-      firstName: mockUser.firstName,
-      lastName: mockUser.lastName,
-      middleName: mockUser.middleName,
-      phone: mockUser.phone,
-      role: mockUser.role,
-      organizationId: mockUser.organizationId,
-      organizationName: mockUser.role === 'SUPER_ADMIN' ? 'Система MyUnion' : 'Центральный комитет профсоюза',
-      organizationType: mockUser.role === 'SUPER_ADMIN' ? 'FEDERAL' : 'FEDERAL',
-      avatar: undefined,
-      isActive: mockUser.isActive,
-      emailVerified: mockUser.emailVerified,
-      membershipValidated: true // Для админов всегда true
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      middleName: user.middleName || undefined,
+      phone: user.phone,
+      role: user.role as any,
+      organizationId: user.organizationId,
+      organizationName: user.organization?.name || 'Неизвестная организация',
+      organizationType: user.organization?.type as any || 'PRIMARY',
+      avatar: user.avatar || undefined,
+      isActive: user.isActive,
+      emailVerified: user.emailVerified,
+      membershipValidated: (user as any).membershipValidated
     });
 
     // Устанавливаем cookie
@@ -94,19 +63,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       user: {
-        id: mockUser.id,
-        email: mockUser.email,
-        firstName: mockUser.firstName,
-        lastName: mockUser.lastName,
-        middleName: mockUser.middleName,
-        phone: mockUser.phone,
-        role: mockUser.role,
-        organizationId: mockUser.organizationId
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        middleName: user.middleName,
+        phone: user.phone,
+        role: user.role,
+        organizationId: user.organizationId
       }
     });
 
   } catch (error) {
     console.error('Login error:', error);
+    
+    // Логируем детали ошибки только в development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Login error details:', error);
+    }
+    
     return NextResponse.json(
       { error: 'Внутренняя ошибка сервера' },
       { status: 500 }

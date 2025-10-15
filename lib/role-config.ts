@@ -76,6 +76,46 @@ export const roleConfigs: RoleConfig[] = [
         canCreateSubOrganizations: false,
         canManageMembers: false,
         canValidateMembership: false
+      },
+      {
+        role: 'FEDERAL_YOUTH_CHAIRMAN',
+        label: 'Председатель Молодежного совета',
+        description: 'Председатель Молодежного совета федеральной организации',
+        canCreateSubOrganizations: false,
+        canManageMembers: true,
+        canValidateMembership: false
+      },
+      {
+        role: 'FEDERAL_YOUTH_VICE_CHAIRMAN',
+        label: 'Заместитель председателя Молодежного совета',
+        description: 'Заместитель председателя Молодежного совета',
+        canCreateSubOrganizations: false,
+        canManageMembers: true,
+        canValidateMembership: false
+      },
+      {
+        role: 'FEDERAL_YOUTH_MEMBER',
+        label: 'Член Молодежного совета',
+        description: 'Член Молодежного совета федеральной организации',
+        canCreateSubOrganizations: false,
+        canManageMembers: false,
+        canValidateMembership: false
+      },
+      {
+        role: 'FEDERAL_AUDIT_CHAIRMAN',
+        label: 'Председатель КРК',
+        description: 'Председатель контрольно-ревизионной комиссии',
+        canCreateSubOrganizations: false,
+        canManageMembers: false,
+        canValidateMembership: false
+      },
+      {
+        role: 'FEDERAL_AUDIT_MEMBER',
+        label: 'Член КРК',
+        description: 'Член контрольно-ревизионной комиссии',
+        canCreateSubOrganizations: false,
+        canManageMembers: false,
+        canValidateMembership: false
       }
     ]
   },
@@ -177,6 +217,22 @@ export const roleConfigs: RoleConfig[] = [
         canCreateSubOrganizations: false,
         canManageMembers: false,
         canValidateMembership: false
+      },
+      {
+        role: 'REGIONAL_AUDIT_CHAIRMAN',
+        label: 'Председатель КРК',
+        description: 'Председатель контрольно-ревизионной комиссии',
+        canCreateSubOrganizations: false,
+        canManageMembers: false,
+        canValidateMembership: false
+      },
+      {
+        role: 'REGIONAL_AUDIT_MEMBER',
+        label: 'Член КРК',
+        description: 'Член контрольно-ревизионной комиссии',
+        canCreateSubOrganizations: false,
+        canManageMembers: false,
+        canValidateMembership: false
       }
     ]
   },
@@ -230,6 +286,46 @@ export const roleConfigs: RoleConfig[] = [
         canCreateSubOrganizations: false,
         canManageMembers: false,
         canValidateMembership: false
+      },
+      {
+        role: 'LOCAL_AUDIT_CHAIRMAN',
+        label: 'Председатель КРК',
+        description: 'Председатель контрольно-ревизионной комиссии',
+        canCreateSubOrganizations: false,
+        canManageMembers: false,
+        canValidateMembership: false
+      },
+      {
+        role: 'LOCAL_AUDIT_MEMBER',
+        label: 'Член КРК',
+        description: 'Член контрольно-ревизионной комиссии',
+        canCreateSubOrganizations: false,
+        canManageMembers: false,
+        canValidateMembership: false
+      },
+      {
+        role: 'LOCAL_YOUTH_CHAIRMAN',
+        label: 'Председатель Молодежного совета',
+        description: 'Председатель Молодежного совета местной организации',
+        canCreateSubOrganizations: false,
+        canManageMembers: true,
+        canValidateMembership: false
+      },
+      {
+        role: 'LOCAL_YOUTH_VICE_CHAIRMAN',
+        label: 'Заместитель председателя Молодежного совета',
+        description: 'Заместитель председателя Молодежного совета',
+        canCreateSubOrganizations: false,
+        canManageMembers: true,
+        canValidateMembership: false
+      },
+      {
+        role: 'LOCAL_YOUTH_MEMBER',
+        label: 'Член Молодежного совета',
+        description: 'Член Молодежного совета местной организации',
+        canCreateSubOrganizations: false,
+        canManageMembers: false,
+        canValidateMembership: false
       }
     ]
   },
@@ -254,7 +350,7 @@ export const roleConfigs: RoleConfig[] = [
       },
       {
         role: 'PRIMARY_ACCOUNTANT',
-        label: 'Бухгалтер',
+        label: 'Бухгалтер (казначей)',
         description: 'Бухгалтер первичной организации',
         canCreateSubOrganizations: false,
         canManageMembers: false,
@@ -304,6 +400,14 @@ export const roleConfigs: RoleConfig[] = [
         role: 'PRIMARY_YOUTH_MEMBER',
         label: 'Член Молодежного совета',
         description: 'Член Молодежного совета первичной организации',
+        canCreateSubOrganizations: false,
+        canManageMembers: false,
+        canValidateMembership: false
+      },
+      {
+        role: 'PRIMARY_MEMBER',
+        label: 'Член Профсоюза',
+        description: 'Член профсоюза первичной организации',
         canCreateSubOrganizations: false,
         canManageMembers: false,
         canValidateMembership: false
@@ -457,14 +561,40 @@ export function canSelfRegister(role: UserRole): boolean {
     'PRIMARY_YOUTH_CHAIRMAN',
     'PRIMARY_YOUTH_VICE_CHAIRMAN',
     'PRIMARY_YOUTH_MEMBER',
+    'PRIMARY_MEMBER',
     'PROF_BUREAU_CHAIRMAN',
     'PROF_BUREAU_VICE_CHAIRMAN',
     'PROF_BUREAU_MEMBER',
     'PROF_GROUP_ORGANIZER',
     'PROF_GROUP_VICE_ORGANIZER', 
-    'PROF_GROUP_MEMBER',
-    'MEMBER'
+    'PROF_GROUP_MEMBER'
   ];
   
   return selfRegisterRoles.includes(role);
+}
+
+// Функция для получения ролей, которые может создавать супер-администратор
+export function getSuperAdminCreatableRoles(): UserRole[] {
+  return [
+    'FEDERAL_CHAIRMAN',
+    'REGIONAL_CHAIRMAN',
+    'LOCAL_CHAIRMAN',
+    'PRIMARY_CHAIRMAN'
+  ];
+}
+
+// Функция для получения ролей, которые может создавать председатель организации
+export function getChairmanCreatableRoles(organizationType: OrganizationType): UserRole[] {
+  const baseRoles = getRolesByOrganizationType(organizationType).map(r => r.role);
+  
+  // Для первичных организаций добавляем роли структурных подразделений
+  if (organizationType === 'PRIMARY') {
+    return [
+      ...baseRoles,
+      ...profBureauRoles.map(r => r.role),
+      ...profGroupRoles.map(r => r.role)
+    ];
+  }
+  
+  return baseRoles;
 }

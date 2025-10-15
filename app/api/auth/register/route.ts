@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createToken, hashPassword } from '@/lib/auth';
+import { createToken } from '@/lib/auth';
+import { createUser, findUserByEmail } from '@/lib/db';
+import { canSelfRegister } from '@/lib/role-config';
 import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, firstName, lastName, middleName, phone, organizationId } = await request.json();
+    const { email, password, firstName, lastName, middleName, phone, organizationId, role } = await request.json();
 
     // Валидация
     if (!email || !password || !firstName || !lastName || !phone) {
@@ -31,31 +33,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Здесь должен быть запрос к базе данных для проверки существующего пользователя
-    // Пока используем моковую проверку
-    if (email === 'admin@example.com') {
+    // Проверяем, может ли пользователь с указанной ролью регистрироваться самостоятельно
+    if (role && !canSelfRegister(role)) {
+      return NextResponse.json(
+        { error: 'Регистрация с данной ролью недоступна. Обратитесь к администратору организации.' },
+        { status: 403 }
+      );
+    }
+
+    // Проверяем, существует ли пользователь с таким email
+    const existingUser = await findUserByEmail(email);
+    if (existingUser) {
       return NextResponse.json(
         { error: 'Пользователь с таким email уже существует' },
         { status: 409 }
       );
     }
 
-    // Хешируем пароль (пока не используем, но будет нужно для базы данных)
-    await hashPassword(password);
+    // Для ролей, которые могут регистрироваться самостоятельно, 
+    // но требуют указания организации
+    let finalOrganizationId = organizationId;
+    
+    if (role === 'PRIMARY_MEMBER' && !organizationId) {
+      return NextResponse.json(
+        { error: 'Для регистрации члена профсоюза необходимо указать организацию' },
+        { status: 400 }
+      );
+    }
 
-    // Создаем пользователя (здесь должен быть запрос к базе данных)
-    const newUser = {
-      id: `user-${Date.now()}`,
+    // Создаем пользователя в базе данных
+    const newUser = await createUser({
       email,
+      password,
       firstName,
       lastName,
-      middleName: middleName || null,
+      middleName: middleName || undefined,
       phone,
-      role: 'MEMBER' as const,
-      organizationId: organizationId || 'org-default',
-      isActive: true,
-      emailVerified: false
-    };
+      role: role || 'PRIMARY_MEMBER', // По умолчанию - член профсоюза
+      organizationId: finalOrganizationId
+    });
 
     // Генерируем JWT токен
     const token = createToken({
@@ -67,12 +83,12 @@ export async function POST(request: NextRequest) {
       phone: newUser.phone,
       role: newUser.role,
       organizationId: newUser.organizationId,
-      organizationName: 'Первичная организация',
-      organizationType: 'PRIMARY',
-      avatar: undefined,
+      organizationName: newUser.organization?.name || 'Первичная организация',
+      organizationType: newUser.organization?.type || 'PRIMARY',
+      avatar: newUser.avatar,
       isActive: newUser.isActive,
       emailVerified: newUser.emailVerified,
-      membershipValidated: false
+      membershipValidated: newUser.membershipValidated
     });
 
     // Устанавливаем cookie
@@ -100,6 +116,12 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Register error:', error);
+    
+    // Логируем детали ошибки только в development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Register error details:', error);
+    }
+    
     return NextResponse.json(
       { error: 'Внутренняя ошибка сервера' },
       { status: 500 }
@@ -129,6 +151,12 @@ export async function PUT(request: NextRequest) {
 
   } catch (error) {
     console.error('Update user error:', error);
+    
+    // Логируем детали ошибки только в development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Update user error details:', error);
+    }
+    
     return NextResponse.json(
       { error: 'Внутренняя ошибка сервера' },
       { status: 500 }

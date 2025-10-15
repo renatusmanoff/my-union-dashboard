@@ -3,58 +3,71 @@ export type OrganizationType = 'FEDERAL' | 'REGIONAL' | 'LOCAL' | 'PRIMARY';
 
 // Типы ролей по уровням организаций
 export type FederalRole = 
-  | 'FEDERAL_CHAIRMAN'           // Председатель
-  | 'FEDERAL_VICE_CHAIRMAN'      // Заместитель председателя
-  | 'FEDERAL_CHIEF_ACCOUNTANT'   // Главный бухгалтер
-  | 'FEDERAL_ACCOUNTANT'         // Бухгалтер
-  | 'FEDERAL_DEPARTMENT_HEAD'    // Начальник управления
-  | 'FEDERAL_OFFICE_HEAD'        // Начальник отдела
-  | 'FEDERAL_SPECIALIST'          // Специалист
-  | 'FEDERAL_PRESIDIUM_MEMBER'    // Член Президиума ЦК Профсоюза
-  | 'FEDERAL_PLENUM_MEMBER';     // Член Пленума ЦК Профсоюза
+  | 'FEDERAL_CHAIRMAN'                    // 1.1. Председатель
+  | 'FEDERAL_VICE_CHAIRMAN'               // 1.2. Заместитель председателя
+  | 'FEDERAL_CHIEF_ACCOUNTANT'           // 1.3. Главный бухгалтер
+  | 'FEDERAL_ACCOUNTANT'                 // 1.4. Бухгалтер
+  | 'FEDERAL_DEPARTMENT_HEAD'            // 1.5. Начальник управления
+  | 'FEDERAL_OFFICE_HEAD'                // 1.6. Начальник отдела
+  | 'FEDERAL_SPECIALIST'                 // 1.7. Специалист
+  | 'FEDERAL_PRESIDIUM_MEMBER'           // 1.8. Член Президиума ЦК Профсоюза
+  | 'FEDERAL_PLENUM_MEMBER'              // 1.9. Член Пленума ЦК Профсоюза
+  | 'FEDERAL_YOUTH_CHAIRMAN'             // 1.10. Председатель Молодежного совета
+  | 'FEDERAL_YOUTH_VICE_CHAIRMAN'        // 1.11. Заместитель председателя Молодежного совета
+  | 'FEDERAL_YOUTH_MEMBER'               // 1.12. Член Молодежного совета
+  | 'FEDERAL_AUDIT_CHAIRMAN'             // 1.13. Председатель КРК
+  | 'FEDERAL_AUDIT_MEMBER';               // 1.14. Член КРК
 
 export type RegionalRole =
-  | 'REGIONAL_CHAIRMAN'          // Председатель
-  | 'REGIONAL_VICE_CHAIRMAN'     // Заместитель председателя
-  | 'REGIONAL_CHIEF_ACCOUNTANT'  // Главный Бухгалтер
-  | 'REGIONAL_PRESIDIUM_MEMBER'  // Член Президиума областного комитета
-  | 'REGIONAL_COMMITTEE_MEMBER'  // Член областного комитета
-  | 'REGIONAL_ACCOUNTANT'         // Бухгалтер
-  | 'REGIONAL_DEPARTMENT_HEAD'   // Заведующий отделом
-  | 'REGIONAL_CHIEF_SPECIALIST'   // Главный специалист
-  | 'REGIONAL_SPECIALIST'         // Специалист
-  | 'REGIONAL_YOUTH_CHAIRMAN'     // Председатель Молодежного совета
-  | 'REGIONAL_YOUTH_VICE_CHAIRMAN' // Заместитель председателя Молодежного совета
-  | 'REGIONAL_YOUTH_MEMBER';     // Член Молодежного совета
+  | 'REGIONAL_CHAIRMAN'                  // 2.1. Председатель
+  | 'REGIONAL_VICE_CHAIRMAN'             // 2.2. Заместитель председателя
+  | 'REGIONAL_CHIEF_ACCOUNTANT'         // 2.3. Главный Бухгалтер
+  | 'REGIONAL_PRESIDIUM_MEMBER'          // 2.4. Член Президиума областного комитета
+  | 'REGIONAL_COMMITTEE_MEMBER'          // 2.5. Член областного комитета
+  | 'REGIONAL_ACCOUNTANT'                // 2.6. Бухгалтер
+  | 'REGIONAL_DEPARTMENT_HEAD'           // 2.7. Заведующий отделом
+  | 'REGIONAL_CHIEF_SPECIALIST'          // 2.8. Главный специалист
+  | 'REGIONAL_SPECIALIST'                // 2.9. Специалист
+  | 'REGIONAL_YOUTH_CHAIRMAN'            // 2.10. Председатель Молодежного совета
+  | 'REGIONAL_YOUTH_VICE_CHAIRMAN'       // 2.11. Заместитель председателя Молодежного совета
+  | 'REGIONAL_YOUTH_MEMBER'              // 2.12. Член Молодежного совета
+  | 'REGIONAL_AUDIT_CHAIRMAN'            // 2.13. Председатель КРК
+  | 'REGIONAL_AUDIT_MEMBER';              // 2.14. Член КРК
 
 export type LocalRole =
-  | 'LOCAL_CHAIRMAN'             // Председатель
-  | 'LOCAL_VICE_CHAIRMAN'        // Заместитель председателя
-  | 'LOCAL_PRESIDIUM_MEMBER'     // Член Президиума местной организации
-  | 'LOCAL_PLENUM_MEMBER'        // Член Пленума местной организации
-  | 'LOCAL_ACCOUNTANT'           // Бухгалтер
-  | 'LOCAL_SPECIALIST';          // Специалист
+  | 'LOCAL_CHAIRMAN'                     // 3.1. Председатель
+  | 'LOCAL_VICE_CHAIRMAN'                // 3.2. Заместитель председателя
+  | 'LOCAL_PRESIDIUM_MEMBER'             // 3.3. Член Президиума местной организации
+  | 'LOCAL_PLENUM_MEMBER'                // 3.4. Член Пленума местной организации
+  | 'LOCAL_ACCOUNTANT'                   // 3.5. Бухгалтер
+  | 'LOCAL_SPECIALIST'                   // 3.6. Специалист
+  | 'LOCAL_AUDIT_CHAIRMAN'               // 3.7. Председатель КРК
+  | 'LOCAL_AUDIT_MEMBER'                 // 3.8. Член КРК
+  | 'LOCAL_YOUTH_CHAIRMAN'               // 3.9. Председатель Молодежного совета
+  | 'LOCAL_YOUTH_VICE_CHAIRMAN'          // 3.10. Заместитель председателя Молодежного совета
+  | 'LOCAL_YOUTH_MEMBER';                 // 3.11. Член Молодежного совета
 
 export type PrimaryRole =
-  | 'PRIMARY_CHAIRMAN'           // Председатель
-  | 'PRIMARY_VICE_CHAIRMAN'      // Заместитель председателя
-  | 'PRIMARY_ACCOUNTANT'         // Бухгалтер
-  | 'PRIMARY_COMMITTEE_MEMBER'    // Член Профкома
-  | 'PRIMARY_AUDIT_CHAIRMAN'     // Председатель КРК
-  | 'PRIMARY_AUDIT_MEMBER'       // Член КРК
-  | 'PRIMARY_YOUTH_CHAIRMAN'     // Председатель Молодежного совета
-  | 'PRIMARY_YOUTH_VICE_CHAIRMAN' // Заместитель председателя Молодежного совета
-  | 'PRIMARY_YOUTH_MEMBER';      // Член Молодежного совета
+  | 'PRIMARY_CHAIRMAN'                   // 4.1. Председатель
+  | 'PRIMARY_VICE_CHAIRMAN'              // 4.2. Заместитель председателя
+  | 'PRIMARY_ACCOUNTANT'                 // 4.3. Бухгалтер (казначей)
+  | 'PRIMARY_COMMITTEE_MEMBER'           // 4.4. Член Профкома
+  | 'PRIMARY_AUDIT_CHAIRMAN'             // 4.5. Председатель КРК
+  | 'PRIMARY_AUDIT_MEMBER'               // 4.6. Член КРК
+  | 'PRIMARY_YOUTH_CHAIRMAN'             // 4.7. Председатель Молодежного совета
+  | 'PRIMARY_YOUTH_VICE_CHAIRMAN'        // 4.8. Заместитель председателя Молодежного совета
+  | 'PRIMARY_YOUTH_MEMBER'               // 4.9. Член Молодежного совета
+  | 'PRIMARY_MEMBER';                    // 4.10. Член Профсоюза
 
 export type ProfBureauRole =
-  | 'PROF_BUREAU_CHAIRMAN'       // Председатель ПрофБюро
-  | 'PROF_BUREAU_VICE_CHAIRMAN'  // Заместитель председателя ПрофБюро
-  | 'PROF_BUREAU_MEMBER';        // Член ПрофБюро
+  | 'PROF_BUREAU_CHAIRMAN'               // 4.a.1. Председатель ПрофБюро
+  | 'PROF_BUREAU_VICE_CHAIRMAN'          // 4.a.2. Заместитель председателя ПрофБюро
+  | 'PROF_BUREAU_MEMBER';                // 4.a.3. Член ПрофБюро
 
 export type ProfGroupRole =
-  | 'PROF_GROUP_ORGANIZER'       // Профгруппорг
-  | 'PROF_GROUP_VICE_ORGANIZER'  // Заместитель профгрупорга
-  | 'PROF_GROUP_MEMBER';         // Член профгруппы
+  | 'PROF_GROUP_ORGANIZER'               // 4.b.1. Профгруппорг
+  | 'PROF_GROUP_VICE_ORGANIZER'         // 4.b.2. Заместитель профгрупорга
+  | 'PROF_GROUP_MEMBER';                 // 4.b.3. Член профгруппы
 
 // Общий тип роли
 export type UserRole = 
@@ -64,8 +77,7 @@ export type UserRole =
   | LocalRole 
   | PrimaryRole 
   | ProfBureauRole 
-  | ProfGroupRole
-  | 'MEMBER'; // Член профсоюза (для регистрации)
+  | ProfGroupRole;
 
 export interface User {
   id: string;

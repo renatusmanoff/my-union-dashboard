@@ -14,6 +14,12 @@ export async function POST() {
 
   } catch (error) {
     console.error('Logout error:', error);
+    
+    // Логируем детали ошибки только в development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Logout error details:', error);
+    }
+    
     return NextResponse.json(
       { error: 'Внутренняя ошибка сервера' },
       { status: 500 }
