@@ -111,7 +111,7 @@ export async function createOrganization(data: {
   chairmanName?: string;
 }) {
   try {
-    const organizationDataToCreate: any = {
+    const organizationDataToCreate: Record<string, unknown> = {
       name: data.name,
       type: data.type as 'FEDERAL' | 'REGIONAL' | 'LOCAL' | 'PRIMARY',
       address: data.address,
@@ -125,7 +125,8 @@ export async function createOrganization(data: {
     }
 
     const organization = await prisma.organization.create({
-      data: organizationDataToCreate
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      data: organizationDataToCreate as any
     });
     
     return organization;
