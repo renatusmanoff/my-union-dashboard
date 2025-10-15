@@ -14,8 +14,6 @@ export async function GET() {
         address: true,
         phone: true,
         email: true,
-        inn: true,
-        membersCount: true,
         isActive: true,
         createdAt: true,
         updatedAt: true
