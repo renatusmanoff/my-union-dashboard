@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, isSuperAdmin } from '@/lib/auth';
-import { verifySMTPConnection, sendAdminCredentials } from '@/lib/email';
+import { verifySMTPConnection, sendTestEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,14 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Отправляем тестовое письмо
-    const testEmailSent = await sendAdminCredentials({
-      email: testEmail,
-      firstName: 'Тестовый',
-      lastName: 'Пользователь',
-      temporaryPassword: 'TestPass123!',
-      role: 'Тестовая роль',
-      organizationName: 'Тестовая организация'
-    });
+    const testEmailSent = await sendTestEmail(testEmail);
 
     return NextResponse.json({
       success: true,

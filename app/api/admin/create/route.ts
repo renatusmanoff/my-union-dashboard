@@ -34,23 +34,24 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, firstName, lastName, middleName, phone, role, organizationId, organizationType } = body;
+    const { email, firstName, lastName, middleName, phone, roles, organizationId, organizationType, organizationName } = body;
 
     // Валидация
-    if (!email || !firstName || !lastName || !phone || !role || !organizationType) {
+    if (!email || !firstName || !lastName || !phone || !roles || !Array.isArray(roles) || roles.length === 0 || !organizationId || !organizationType) {
       return NextResponse.json(
-        { error: 'Все поля обязательны' },
+        { error: 'Все поля обязательны и должны быть заполнены корректно' },
         { status: 400 }
       );
     }
 
-    // Проверяем, что роль корректная для данного типа организации
+    // Проверяем, что все роли корректные для данного типа организации
     const availableRoles = getRolesByOrganizationType(organizationType);
     const validRoles = availableRoles.map(r => r.role);
     
-    if (!validRoles.includes(role)) {
+    const invalidRoles = roles.filter(role => !validRoles.includes(role));
+    if (invalidRoles.length > 0) {
       return NextResponse.json(
-        { error: 'Некорректная роль для данного типа организации' },
+        { error: `Некорректные роли для данного типа организации: ${invalidRoles.join(', ')}` },
         { status: 400 }
       );
     }
@@ -68,9 +69,9 @@ export async function POST(request: NextRequest) {
       lastName,
       middleName,
       phone,
-      role,
+      role: roles[0], // Основная роль - первая из выбранных
       organizationId,
-      organizationName: `Организация ${organizationType}`, // Должно быть получено из БД
+      organizationName: organizationName || `Организация ${organizationType}`, // Должно быть получено из БД
       isActive: true,
       emailVerified: false,
       temporaryPassword,
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
       firstName: newAdmin.firstName,
       lastName: newAdmin.lastName,
       temporaryPassword,
-      role: newAdmin.role,
+      role: roles.join(', '), // Все роли через запятую
       organizationName: newAdmin.organizationName
     });
 
@@ -109,6 +110,7 @@ export async function POST(request: NextRequest) {
         createdAt: newAdmin.createdAt
       },
       emailSent,
+      temporaryPassword: emailSent ? undefined : temporaryPassword,
       message: emailSent 
         ? 'Администратор создан и учетные данные отправлены на email'
         : 'Администратор создан, но не удалось отправить email с учетными данными'

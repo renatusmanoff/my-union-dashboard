@@ -110,6 +110,7 @@ export interface Organization {
   email: string;
   chairmanId?: string; // ID председателя организации
   chairmanName?: string;
+  inn?: string; // ИНН организации
   membersCount: number;
   isActive: boolean;
   createdAt: Date;

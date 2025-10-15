@@ -119,10 +119,11 @@ export default function OrganizationsPage() {
       if (data.success) {
         setOrganizations(data.organizations);
       } else {
-        console.error('Error fetching organizations:', data.error);
+        alert(data.error || 'Ошибка при загрузке организаций');
       }
     } catch (error) {
       console.error('Error fetching organizations:', error);
+      alert('Ошибка при загрузке организаций');
     } finally {
       setIsLoading(false);
     }
@@ -173,14 +174,6 @@ export default function OrganizationsPage() {
     fetchOrganizations();
     fetchAdmins();
   }, [fetchOrganizations, fetchAdmins]);
-
-  // Обновляем роль по умолчанию при изменении типа организации
-  useEffect(() => {
-    const defaultRole = getRolesByOrganizationType(formData.type)[0]?.role;
-    if (defaultRole) {
-      setChairmanData(prev => ({ ...prev, role: defaultRole }));
-    }
-  }, [formData.type]);
 
   const handleCreateOrganization = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -249,17 +242,78 @@ export default function OrganizationsPage() {
     }
   };
 
-  const handleINNSearch = async () => {
-    if (formData.inn.length === 10 || formData.inn.length === 12) {
-      const foundOrg = await searchOrganizationByINN(formData.inn);
-      if (foundOrg) {
-        alert(`Организация найдена: ${foundOrg.name}`);
+  const handleEditOrganization = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingOrg) return;
+
+    try {
+      const response = await fetch(`/api/organizations/${editingOrg.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('Организация успешно обновлена!');
+        setEditingOrg(null);
+        setFormData({
+          name: '',
+          type: 'FEDERAL',
+          parentId: '',
+          address: '',
+          phone: '',
+          email: '',
+          chairmanName: ''
+        });
+        fetchOrganizations();
       } else {
-        alert('Организация с таким ИНН не найдена. Заполните данные вручную.');
+        alert(data.error || 'Ошибка при обновлении организации');
       }
-    } else {
-      alert('ИНН должен содержать 10 или 12 цифр');
+    } catch (error) {
+      console.error('Error updating organization:', error);
+      alert('Ошибка при обновлении организации');
     }
+  };
+
+  const handleDeleteOrganization = async (orgId: string) => {
+    if (!confirm('Вы уверены, что хотите удалить эту организацию?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/organizations/${orgId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('Организация успешно удалена!');
+        fetchOrganizations();
+      } else {
+        alert(data.error || 'Ошибка при удалении организации');
+      }
+    } catch (error) {
+      console.error('Error deleting organization:', error);
+      alert('Ошибка при удалении организации');
+    }
+  };
+
+  const startEdit = (org: Organization) => {
+    setEditingOrg(org);
+    setFormData({
+      name: org.name,
+      type: org.type,
+      parentId: org.parentId || '',
+      address: org.address,
+      phone: org.phone,
+      email: org.email,
+      chairmanName: org.chairmanName || ''
+    });
   };
 
   const cancelEdit = () => {
@@ -272,16 +326,7 @@ export default function OrganizationsPage() {
       address: '',
       phone: '',
       email: '',
-      chairmanName: '',
-      inn: ''
-    });
-    setChairmanData({
-      email: '',
-      firstName: '',
-      lastName: '',
-      middleName: '',
-      phone: '',
-      role: 'FEDERAL_CHAIRMAN'
+      chairmanName: ''
     });
   };
 
@@ -307,8 +352,8 @@ export default function OrganizationsPage() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold mb-2">Организации и Администраторы</h1>
-              <p className="text-gray-400">Управление профсоюзными организациями и их руководителями</p>
+              <h1 className="text-2xl font-bold mb-2">Организации</h1>
+              <p className="text-gray-400">Управление профсоюзными организациями</p>
             </div>
             <div className="flex space-x-3">
               <button 
@@ -323,100 +368,56 @@ export default function OrganizationsPage() {
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="border-b border-gray-200 dark:border-gray-700">
-            <nav className="-mb-px flex space-x-8">
-              <button
-                onClick={() => setActiveTab('organizations')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'organizations'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Организации ({organizations.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('admins')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'admins'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Администраторы ({admins.length})
-              </button>
-            </nav>
-          </div>
-
           {/* Filters */}
           <div className="card p-6 rounded-lg">
             <div className="flex flex-wrap gap-4">
               <div className="flex-1 min-w-64">
                 <input
                   type="text"
-                  placeholder={activeTab === 'organizations' ? "Поиск по организациям..." : "Поиск по администраторам..."}
+                  placeholder="Поиск по организациям..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && fetchOrganizations()}
                   className="w-full px-4 py-2 rounded-lg"
                   style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
                 />
               </div>
-              {activeTab === 'organizations' && (
-                <div className="min-w-48">
-                  <select
-                    value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value as OrganizationType | '')}
-                    className="w-full px-4 py-2 rounded-lg"
-                    style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
-                  >
-                    <option value="">Все типы</option>
-                    <option value="FEDERAL">Федеральный</option>
-                    <option value="REGIONAL">Региональная</option>
-                    <option value="LOCAL">Местная</option>
-                    <option value="PRIMARY">Первичная</option>
-                  </select>
-                </div>
-              )}
+              <select 
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value as OrganizationType | '')}
+                className="px-4 py-2 rounded-lg"
+                style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
+              >
+                <option value="">Все типы</option>
+                <option value="FEDERAL">Федеральный</option>
+                <option value="REGIONAL">Региональная</option>
+                <option value="LOCAL">Местная</option>
+                <option value="PRIMARY">Первичная</option>
+              </select>
+              <button
+                onClick={fetchOrganizations}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Поиск
+              </button>
             </div>
           </div>
 
           {/* Create/Edit Form */}
-          {showCreateForm && (
+          {(showCreateForm || editingOrg) && (
             <div className="card p-6 rounded-lg">
               <h3 className="text-lg font-semibold mb-4">
                 {editingOrg ? 'Редактировать организацию' : 'Создать новую организацию'}
               </h3>
-              <form onSubmit={handleCreateOrganization} className="space-y-6">
-                {/* Organization Data */}
+              <form onSubmit={editingOrg ? handleEditOrganization : handleCreateOrganization} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">ИНН организации</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={formData.inn}
-                        onChange={(e) => setFormData({ ...formData, inn: e.target.value })}
-                        placeholder="Введите ИНН (10 или 12 цифр)"
-                        className="flex-1 px-3 py-2 rounded-lg"
-                        style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleINNSearch}
-                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                      >
-                        Найти
-                      </button>
-                    </div>
-                  </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">Название организации *</label>
                     <input
                       type="text"
-                      required
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      required
                       className="w-full px-3 py-2 rounded-lg"
                       style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
                     />
@@ -424,19 +425,19 @@ export default function OrganizationsPage() {
                   <div>
                     <label className="block text-sm font-medium mb-2">Тип организации *</label>
                     <select
-                      required
                       value={formData.type}
-                      onChange={(e) => setFormData({ ...formData, type: e.target.value as OrganizationType })}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value as OrganizationType, parentId: '' })}
+                      required
                       className="w-full px-3 py-2 rounded-lg"
                       style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
                     >
-                      <option value="FEDERAL">Федеральный уровень</option>
-                      <option value="REGIONAL">Региональный уровень</option>
-                      <option value="LOCAL">Местный уровень</option>
-                      <option value="PRIMARY">Первичная организация</option>
+                      <option value="FEDERAL">Федеральный</option>
+                      <option value="REGIONAL">Региональная</option>
+                      <option value="LOCAL">Местная</option>
+                      <option value="PRIMARY">Первичная</option>
                     </select>
                   </div>
-                  {formData.type !== 'FEDERAL' && (
+                  {getParentOptions().length > 0 && (
                     <div>
                       <label className="block text-sm font-medium mb-2">Родительская организация</label>
                       <select
@@ -446,21 +447,29 @@ export default function OrganizationsPage() {
                         style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
                       >
                         <option value="">Выберите родительскую организацию</option>
-                        {getParentOptions().map((org) => (
-                          <option key={org.id} value={org.id}>
-                            {org.name}
-                          </option>
+                        {getParentOptions().map(org => (
+                          <option key={org.id} value={org.id}>{org.name}</option>
                         ))}
                       </select>
                     </div>
                   )}
                   <div>
+                    <label className="block text-sm font-medium mb-2">Председатель</label>
+                    <input
+                      type="text"
+                      value={formData.chairmanName}
+                      onChange={(e) => setFormData({ ...formData, chairmanName: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg"
+                      style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
+                    />
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium mb-2">Адрес *</label>
                     <input
                       type="text"
-                      required
                       value={formData.address}
                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      required
                       className="w-full px-3 py-2 rounded-lg"
                       style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
                     />
@@ -469,9 +478,9 @@ export default function OrganizationsPage() {
                     <label className="block text-sm font-medium mb-2">Телефон *</label>
                     <input
                       type="tel"
-                      required
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      required
                       className="w-full px-3 py-2 rounded-lg"
                       style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
                     />
@@ -480,93 +489,15 @@ export default function OrganizationsPage() {
                     <label className="block text-sm font-medium mb-2">Email *</label>
                     <input
                       type="email"
-                      required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      required
                       className="w-full px-3 py-2 rounded-lg"
                       style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
                     />
                   </div>
                 </div>
-
-                {/* Chairman Data */}
-                <div className="border-t pt-6">
-                  <h4 className="text-md font-semibold mb-4">Данные руководителя организации</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Email руководителя *</label>
-                      <input
-                        type="email"
-                        required
-                        value={chairmanData.email}
-                        onChange={(e) => setChairmanData({ ...chairmanData, email: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg"
-                        style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Телефон руководителя *</label>
-                      <input
-                        type="tel"
-                        required
-                        value={chairmanData.phone}
-                        onChange={(e) => setChairmanData({ ...chairmanData, phone: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg"
-                        style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Имя *</label>
-                      <input
-                        type="text"
-                        required
-                        value={chairmanData.firstName}
-                        onChange={(e) => setChairmanData({ ...chairmanData, firstName: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg"
-                        style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Фамилия *</label>
-                      <input
-                        type="text"
-                        required
-                        value={chairmanData.lastName}
-                        onChange={(e) => setChairmanData({ ...chairmanData, lastName: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg"
-                        style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Отчество</label>
-                      <input
-                        type="text"
-                        value={chairmanData.middleName}
-                        onChange={(e) => setChairmanData({ ...chairmanData, middleName: e.target.value })}
-                        className="w-full px-3 py-2 rounded-lg"
-                        style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Роль *</label>
-                      <select
-                        required
-                        value={chairmanData.role}
-                        onChange={(e) => setChairmanData({ ...chairmanData, role: e.target.value as UserRole })}
-                        className="w-full px-3 py-2 rounded-lg"
-                        style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)' }}
-                      >
-                        {getRolesByOrganizationType(formData.type).map((roleConfig) => (
-                          <option key={roleConfig.role} value={roleConfig.role}>
-                            {roleConfig.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex space-x-3">
+                <div className="flex space-x-3 pt-4">
                   <button
                     type="submit"
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -585,45 +516,102 @@ export default function OrganizationsPage() {
             </div>
           )}
 
-          {/* Content based on active tab */}
-          {activeTab === 'organizations' ? (
-            /* Organizations Table */
-            <div className="card rounded-lg overflow-hidden">
+          {/* Organizations Table */}
+          <div className="card overflow-hidden">
+            {isLoading ? (
+              <div className="p-8 text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p className="mt-2 text-gray-400">Загрузка организаций...</p>
+              </div>
+            ) : (
               <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr style={{ backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--card-border)' }}>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Организация</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Тип</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Руководитель</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Членов</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Действия</th>
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Организация
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Тип
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Руководитель
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Члены
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Контакты
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Действия
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y" style={{ borderColor: 'var(--card-border)' }}>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {organizations.map((org) => (
-                      <tr key={org.id}>
+                      <tr key={org.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td className="px-6 py-4">
                           <div>
-                            <div className="text-sm font-medium">{org.name}</div>
-                            <div className="text-sm text-gray-400">{org.address}</div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              {org.name}
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {org.address}
+                            </div>
+                            {org.parentName && (
+                              <div className="text-xs text-gray-400">
+                                Родительская: {org.parentName}
+                              </div>
+                            )}
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${typeColors[org.type]}`}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${typeColors[org.type]}`}>
                             {typeLabels[org.type]}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                           {org.chairmanName || 'Не назначен'}
                         </td>
-                        <td className="px-6 py-4 text-sm">
-                          {org.membersCount?.toLocaleString() || 0}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                          {org.membersCount.toLocaleString()}
                         </td>
-                        <td className="px-6 py-4 text-sm">
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900 dark:text-white">
+                            <div>{org.phone}</div>
+                            <div className="text-gray-500 dark:text-gray-400">{org.email}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
-                            <button className="text-blue-400 hover:text-blue-600">Редактировать</button>
-                            <button className="text-red-400 hover:text-red-600">Удалить</button>
+                            <button 
+                              onClick={() => startEdit(org)}
+                              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                              title="Редактировать"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                              </svg>
+                            </button>
+                            <button 
+                              className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                              title="Просмотр"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteOrganization(org.id)}
+                              className="text-red-400 hover:text-red-600 dark:hover:text-red-300"
+                              title="Удалить"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -631,58 +619,25 @@ export default function OrganizationsPage() {
                   </tbody>
                 </table>
               </div>
-            </div>
-          ) : (
-            /* Admins Table */
-            <div className="card rounded-lg overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr style={{ backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--card-border)' }}>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Администратор</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Роль</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Организация</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Статус</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Действия</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y" style={{ borderColor: 'var(--card-border)' }}>
-                    {admins.map((admin) => (
-                      <tr key={admin.id}>
-                        <td className="px-6 py-4">
-                          <div>
-                            <div className="text-sm font-medium">{admin.firstName} {admin.lastName}</div>
-                            <div className="text-sm text-gray-400">{admin.email}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                            {admin.role}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm">
-                          {admin.organizationName}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            admin.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}>
-                            {admin.isActive ? 'Активен' : 'Неактивен'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm">
-                          <div className="flex space-x-2">
-                            <button className="text-blue-400 hover:text-blue-600">Редактировать</button>
-                            <button className="text-red-400 hover:text-red-600">Деактивировать</button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            )}
+          </div>
+
+          {/* Pagination */}
+          <div className="card p-6">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-700 dark:text-gray-300">
+                Показано {organizations.length} организаций
+              </div>
+              <div className="flex space-x-2">
+                <button 
+                  onClick={fetchOrganizations}
+                  className="px-3 py-2 text-sm font-medium text-gray-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600"
+                >
+                  Обновить
+                </button>
               </div>
             </div>
-          )}
+          </div>
         </div>
       </div>
     </DashboardLayout>

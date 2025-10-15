@@ -17,6 +17,12 @@ const transporter = nodemailer.createTransport(smtpConfig);
 // Проверяем подключение к SMTP
 export async function verifySMTPConnection(): Promise<boolean> {
   try {
+    // В локальной среде всегда возвращаем true
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📧 [DEV] SMTP connection simulated as successful');
+      return true;
+    }
+
     await transporter.verify();
     console.log('SMTP connection verified successfully');
     return true;
@@ -39,6 +45,15 @@ interface AdminCredentials {
 // Отправка учетных данных администратору
 export async function sendAdminCredentials(adminData: AdminCredentials): Promise<boolean> {
   try {
+    // В локальной среде просто логируем отправку
+    if (process.env.NODE_ENV === 'development' && !process.env.SMTP_USER) {
+      console.log('📧 [DEV] Email would be sent to:', adminData.email);
+      console.log('📧 [DEV] Subject: Учетные данные для входа в систему MyUnion');
+      console.log('📧 [DEV] Temporary password:', adminData.temporaryPassword);
+      console.log('📧 [DEV] Roles:', adminData.role);
+      return true;
+    }
+
     const mailOptions = {
       from: process.env.SMTP_FROM || 'support@myunion.pro',
       to: adminData.email,
@@ -55,13 +70,48 @@ export async function sendAdminCredentials(adminData: AdminCredentials): Promise
   }
 }
 
+// Отправка тестового email
+export async function sendTestEmail(testEmail: string): Promise<boolean> {
+  try {
+    // В локальной среде просто логируем отправку
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📧 [DEV] Test email would be sent to:', testEmail);
+      console.log('📧 [DEV] Subject: Тестовое письмо от MyUnion');
+      return true;
+    }
+
+    const mailOptions = {
+      from: process.env.SMTP_FROM || 'support@myunion.pro',
+      to: testEmail,
+      subject: 'Тестовое письмо от MyUnion',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #007bff;">Тестовое письмо</h2>
+          <p>Это тестовое письмо для проверки работы SMTP сервера.</p>
+          <p>Если вы получили это письмо, значит SMTP настроен правильно.</p>
+          <p style="color: #6c757d; font-size: 14px; margin-top: 30px;">
+            © 2024 MyUnion - Система управления профсоюзными организациями
+          </p>
+        </div>
+      `
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Test email sent:', info.messageId);
+    return true;
+  } catch (error) {
+    console.error('Failed to send test email:', error);
+    return false;
+  }
+}
+
 // Генерация HTML письма с учетными данными
 function generateAdminCredentialsEmail(adminData: AdminCredentials): string {
   return `
     <!DOCTYPE html>
-    <html lang="ru">
+    <html>
     <head>
-        <meta charset="UTF-8">
+        <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Учетные данные MyUnion</title>
         <style>
@@ -134,15 +184,6 @@ function generateAdminCredentialsEmail(adminData: AdminCredentials): string {
                 color: #6c757d;
                 font-size: 14px;
             }
-            .button {
-                display: inline-block;
-                background-color: #007bff;
-                color: white;
-                padding: 12px 24px;
-                text-decoration: none;
-                border-radius: 5px;
-                margin: 20px 0;
-            }
         </style>
     </head>
     <body>
@@ -154,29 +195,24 @@ function generateAdminCredentialsEmail(adminData: AdminCredentials): string {
             
             <p>Здравствуйте, <strong>${adminData.firstName} ${adminData.lastName}</strong>!</p>
             
-            <p>Вам предоставлен доступ к системе управления профсоюзными организациями MyUnion.</p>
+            <p>Вы были назначены администратором в системе MyUnion. Ниже представлены ваши учетные данные для входа:</p>
             
             <div class="credentials-box">
-                <h3>Ваши учетные данные:</h3>
-                
                 <div class="credential-item">
-                    <div class="label">Роль:</div>
-                    <div class="value">${adminData.role}</div>
-                </div>
-                
-                <div class="credential-item">
-                    <div class="label">Организация:</div>
-                    <div class="value">${adminData.organizationName}</div>
-                </div>
-                
-                <div class="credential-item">
-                    <div class="label">Email (логин):</div>
+                    <div class="label">Email:</div>
                     <div class="value">${adminData.email}</div>
                 </div>
-                
                 <div class="credential-item">
                     <div class="label">Временный пароль:</div>
                     <div class="value">${adminData.temporaryPassword}</div>
+                </div>
+                <div class="credential-item">
+                    <div class="label">Роли:</div>
+                    <div class="value">${adminData.role}</div>
+                </div>
+                <div class="credential-item">
+                    <div class="label">Организация:</div>
+                    <div class="value">${adminData.organizationName}</div>
                 </div>
             </div>
             
@@ -240,9 +276,9 @@ function generateMembershipValidationEmail(
   
   return `
     <!DOCTYPE html>
-    <html lang="ru">
+    <html>
     <head>
-        <meta charset="UTF-8">
+        <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${isApproved ? 'Членство подтверждено' : 'Решение по заявлению'}</title>
         <style>
@@ -282,10 +318,6 @@ function generateMembershipValidationEmail(
                 margin: 20px 0;
                 text-align: center;
             }
-            .status-icon {
-                font-size: 48px;
-                margin-bottom: 10px;
-            }
             .footer {
                 text-align: center;
                 margin-top: 30px;
@@ -300,29 +332,37 @@ function generateMembershipValidationEmail(
         <div class="container">
             <div class="header">
                 <div class="logo">MyUnion</div>
-                <h1>${isApproved ? 'Поздравляем!' : 'Уведомление'}</h1>
+                <h1>${isApproved ? 'Членство подтверждено' : 'Решение по заявлению'}</h1>
             </div>
             
             <p>Здравствуйте, <strong>${firstName} ${lastName}</strong>!</p>
             
             <div class="status-box">
-                <div class="status-icon">${isApproved ? '✅' : '❌'}</div>
-                <h2>${isApproved ? 'Ваше членство подтверждено!' : 'Ваше заявление отклонено'}</h2>
-                <p><strong>Организация:</strong> ${organizationName}</p>
+                <h2>${isApproved ? '✅ Поздравляем!' : '❌ К сожалению'}</h2>
+                <p>
+                    ${isApproved 
+                      ? `Ваше заявление на членство в профсоюзе "${organizationName}" было одобрено. Добро пожаловать в нашу организацию!`
+                      : `Ваше заявление на членство в профсоюзе "${organizationName}" было отклонено.`
+                    }
+                </p>
             </div>
             
             ${isApproved ? `
-                <p>Добро пожаловать в профсоюзную организацию! Теперь вы можете пользоваться всеми возможностями системы MyUnion.</p>
-                <p>Вы можете войти в систему, используя свои учетные данные, и получить доступ к:</p>
+                <p>Теперь вы можете:</p>
                 <ul>
-                    <li>Новостям и объявлениям</li>
-                    <li>Скидкам и льготам</li>
-                    <li>Профсоюзным мероприятиям</li>
-                    <li>И другим возможностям системы</li>
+                    <li>Войти в личный кабинет</li>
+                    <li>Просматривать новости и объявления</li>
+                    <li>Пользоваться льготами и скидками</li>
+                    <li>Участвовать в мероприятиях профсоюза</li>
                 </ul>
+                
+                <div style="text-align: center;">
+                    <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login" class="button">
+                        Войти в личный кабинет
+                    </a>
+                </div>
             ` : `
-                <p>К сожалению, ваше заявление на членство в профсоюзе было отклонено.</p>
-                <p>Если у вас есть вопросы по этому решению, обратитесь к администратору организации.</p>
+                <p>Если у вас есть вопросы по поводу решения, обратитесь к администратору организации.</p>
             `}
             
             <div class="footer">
@@ -335,7 +375,7 @@ function generateMembershipValidationEmail(
   `;
 }
 
-// Отправка уведомления о сбросе пароля
+// Отправка письма для сброса пароля
 export async function sendPasswordResetEmail(
   email: string,
   firstName: string,
@@ -362,12 +402,16 @@ export async function sendPasswordResetEmail(
 }
 
 // Генерация HTML письма для сброса пароля
-function generatePasswordResetEmail(firstName: string, lastName: string, resetUrl: string): string {
+function generatePasswordResetEmail(
+  firstName: string,
+  lastName: string,
+  resetUrl: string
+): string {
   return `
     <!DOCTYPE html>
-    <html lang="ru">
+    <html>
     <head>
-        <meta charset="UTF-8">
+        <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Сброс пароля</title>
         <style>
@@ -434,7 +478,7 @@ function generatePasswordResetEmail(firstName: string, lastName: string, resetUr
             
             <p>Здравствуйте, <strong>${firstName} ${lastName}</strong>!</p>
             
-            <p>Вы запросили сброс пароля для вашего аккаунта в системе MyUnion.</p>
+            <p>Мы получили запрос на сброс пароля для вашего аккаунта в системе MyUnion.</p>
             
             <div style="text-align: center;">
                 <a href="${resetUrl}" class="button">

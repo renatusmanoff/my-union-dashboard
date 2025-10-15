@@ -23,10 +23,10 @@ export default function SuperAdminDashboard() {
     try {
       // Здесь будут реальные API запросы
       setStats({
-        totalOrganizations: 15,
-        totalAdmins: 8,
-        totalMembers: 1250,
-        pendingValidations: 23
+        totalOrganizations: 14,
+        totalAdmins: 3,
+        totalMembers: 28500000,
+        pendingValidations: 156
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -37,9 +37,11 @@ export default function SuperAdminDashboard() {
     try {
       // Здесь будут реальные API запросы
       setRecentActivity([
-        { id: 1, type: 'admin_created', message: 'Создан новый администратор для организации "Центральный комитет"', time: '2 часа назад' },
-        { id: 2, type: 'member_validated', message: 'Валидировано членство для 5 новых членов', time: '4 часа назад' },
-        { id: 3, type: 'organization_created', message: 'Создана новая организация "Региональный комитет Москвы"', time: '1 день назад' }
+        { id: 1, type: 'admin_created', message: 'Создан новый администратор для организации "ФНПР"', time: '2 часа назад' },
+        { id: 2, type: 'member_validated', message: 'Валидировано членство для 25 новых членов профсоюза образования', time: '4 часа назад' },
+        { id: 3, type: 'organization_created', message: 'Создана новая организация "Профсоюз работников здравоохранения РФ"', time: '1 день назад' },
+        { id: 4, type: 'member_validated', message: 'Валидировано членство для 150 новых членов ПАО "Газпром"', time: '2 дня назад' },
+        { id: 5, type: 'admin_created', message: 'Создан новый администратор для Московской федерации профсоюзов', time: '3 дня назад' }
       ]);
     } catch (error) {
       console.error('Error fetching activity:', error);

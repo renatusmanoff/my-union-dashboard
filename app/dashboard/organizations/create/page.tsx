@@ -20,16 +20,18 @@ export default function CreateOrganizationPage() {
   });
 
   const organizationTypes = [
-    { value: 'CENTRAL_COMMITTEE', label: 'Центральный комитет' },
+    { value: 'FEDERAL', label: 'Федеральный уровень' },
     { value: 'REGIONAL', label: 'Региональная организация' },
     { value: 'LOCAL', label: 'Местная организация' },
     { value: 'PRIMARY', label: 'Первичная организация' }
   ];
 
   const parentOrganizations = [
-    { id: '1', name: 'Центральный комитет профсоюза', type: 'CENTRAL_COMMITTEE' },
-    { id: '2', name: 'Региональная организация Москвы', type: 'REGIONAL' },
-    { id: '3', name: 'Местная организация Центрального округа', type: 'LOCAL' }
+    { id: '1', name: 'Федерация независимых профсоюзов России (ФНПР)', type: 'FEDERAL' },
+    { id: '2', name: 'Профсоюз работников образования и науки РФ', type: 'FEDERAL' },
+    { id: '3', name: 'Московская федерация профсоюзов', type: 'REGIONAL' },
+    { id: '4', name: 'Санкт-Петербургская федерация профсоюзов', type: 'REGIONAL' },
+    { id: '5', name: 'Московская городская организация профсоюза работников образования', type: 'LOCAL' }
   ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

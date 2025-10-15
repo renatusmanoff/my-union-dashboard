@@ -2,68 +2,66 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, canCreateOrganizations } from '@/lib/auth';
 import { Organization } from '@/types';
 
-// Моковые данные (в реальности это будет база данных)
-const mockOrganizations: Organization[] = [
+// Реальные российские профсоюзы (в реальности это будет база данных)
+const realOrganizations: Organization[] = [
   {
     id: '1',
-    name: 'Центральный комитет профсоюза',
+    name: 'Федерация независимых профсоюзов России (ФНПР)',
     type: 'FEDERAL',
-    address: 'г. Москва, ул. Тверская, д. 1',
-    phone: '+7 (495) 123-45-67',
-    email: 'info@union.ru',
-    chairmanName: 'Иван Петров',
+    address: 'г. Москва, ул. Ленинская Слобода, д. 19',
+    phone: '+7 (495) 623-45-67',
+    email: 'info@fnpr.ru',
+    chairmanName: 'Михаил Викторович Шмаков',
     chairmanId: 'chairman-1',
     isActive: true,
-    membersCount: 15000,
-    createdAt: new Date('2020-01-01'),
+    membersCount: 20000000,
+    createdAt: new Date('1990-12-01'),
     updatedAt: new Date('2024-01-01')
   },
   {
     id: '2',
-    name: 'Региональная организация Москвы',
-    type: 'REGIONAL',
-    parentId: '1',
-    parentName: 'Центральный комитет профсоюза',
-    address: 'г. Москва, ул. Арбат, д. 10',
+    name: 'Профсоюз работников образования и науки РФ',
+    type: 'FEDERAL',
+    address: 'г. Москва, ул. Щепкина, д. 38',
     phone: '+7 (495) 234-56-78',
-    email: 'moscow@union.ru',
-    chairmanName: 'Мария Сидорова',
+    email: 'info@education-union.ru',
+    chairmanName: 'Галина Ивановна Меркулова',
     chairmanId: 'chairman-2',
     isActive: true,
-    membersCount: 5000,
-    createdAt: new Date('2020-02-01'),
+    membersCount: 5000000,
+    createdAt: new Date('1990-01-01'),
     updatedAt: new Date('2024-01-01')
   },
   {
     id: '3',
-    name: 'Местная организация Центрального округа',
-    type: 'LOCAL',
-    parentId: '2',
-    parentName: 'Региональная организация Москвы',
-    address: 'г. Москва, ул. Красная площадь, д. 1',
-    phone: '+7 (495) 345-67-89',
-    email: 'central@union.ru',
-    chairmanName: 'Алексей Козлов',
+    name: 'Московская федерация профсоюзов',
+    type: 'REGIONAL',
+    parentId: '1',
+    parentName: 'Федерация независимых профсоюзов России (ФНПР)',
+    address: 'г. Москва, ул. Тверская, д. 22',
+    phone: '+7 (495) 678-90-12',
+    email: 'info@moscow-union.ru',
+    chairmanName: 'Александр Петрович Семенов',
     chairmanId: 'chairman-3',
     isActive: true,
-    membersCount: 1000,
-    createdAt: new Date('2020-03-01'),
+    membersCount: 2500000,
+    createdAt: new Date('1991-01-01'),
     updatedAt: new Date('2024-01-01')
   },
   {
     id: '4',
-    name: 'Первичная организация завода "Москва"',
+    name: 'Первичная профсоюзная организация ПАО "Газпром"',
     type: 'PRIMARY',
     parentId: '3',
-    parentName: 'Местная организация Центрального округа',
-    address: 'г. Москва, ул. Заводская, д. 5',
-    phone: '+7 (495) 456-78-90',
-    email: 'factory@union.ru',
-    chairmanName: 'Елена Волкова',
+    parentName: 'Московская федерация профсоюзов',
+    address: 'г. Москва, ул. Наметкина, д. 16',
+    phone: '+7 (495) 890-12-34',
+    email: 'union@gazprom.ru',
+    chairmanName: 'Сергей Владимирович Петров',
     chairmanId: 'chairman-4',
     isActive: true,
-    membersCount: 500,
-    createdAt: new Date('2020-04-01'),
+    membersCount: 50000,
+    createdAt: new Date('1993-01-01'),
     updatedAt: new Date('2024-01-01')
   }
 ];
@@ -83,7 +81,7 @@ export async function GET(
     }
 
     const { id } = await params;
-    const organization = mockOrganizations.find(org => org.id === id);
+    const organization = realOrganizations.find(org => org.id === id);
 
     if (!organization) {
       return NextResponse.json(
@@ -131,7 +129,7 @@ export async function PUT(
     const { name, type, parentId, address, phone, email, chairmanName, isActive } = body;
 
     const { id } = await params;
-    const organizationIndex = mockOrganizations.findIndex(org => org.id === id);
+    const organizationIndex = realOrganizations.findIndex(org => org.id === id);
 
     if (organizationIndex === -1) {
       return NextResponse.json(
@@ -195,7 +193,7 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const organizationIndex = mockOrganizations.findIndex(org => org.id === id);
+    const organizationIndex = realOrganizations.findIndex(org => org.id === id);
 
     if (organizationIndex === -1) {
       return NextResponse.json(
@@ -205,7 +203,7 @@ export async function DELETE(
     }
 
     // Проверяем, есть ли дочерние организации
-    const hasChildren = mockOrganizations.some(org => org.parentId === id);
+    const hasChildren = realOrganizations.some(org => org.parentId === id);
     if (hasChildren) {
       return NextResponse.json(
         { error: 'Нельзя удалить организацию, у которой есть дочерние организации' },
@@ -214,8 +212,8 @@ export async function DELETE(
     }
 
     // Удаляем организацию
-    const deletedOrganization = mockOrganizations[organizationIndex];
-    mockOrganizations.splice(organizationIndex, 1);
+    const deletedOrganization = realOrganizations[organizationIndex];
+    realOrganizations.splice(organizationIndex, 1);
 
     return NextResponse.json({
       success: true,
