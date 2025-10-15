@@ -29,8 +29,8 @@ model User {
   updatedAt       DateTime @updatedAt
 
   // Связи
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id])
+  organizationId  String?
+  organization    Organization? @relation(fields: [organizationId], references: [id])
   
   // Созданные новости
   createdNews     News[]

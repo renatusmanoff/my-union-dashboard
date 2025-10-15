@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       middleName: newUser.middleName || undefined,
       phone: newUser.phone,
       role: newUser.role,
-      organizationId: newUser.organizationId,
+      organizationId: newUser.organizationId || '',
       organizationName: 'Первичная организация',
       organizationType: 'PRIMARY' as OrganizationType,
       avatar: newUser.avatar || undefined,
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
         middleName: newUser.middleName || undefined,
         phone: newUser.phone,
         role: newUser.role,
-        organizationId: newUser.organizationId
+        organizationId: newUser.organizationId || ''
       }
     });
 

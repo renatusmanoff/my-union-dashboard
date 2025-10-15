@@ -68,20 +68,26 @@ export async function createUser(userData: CreateUserData) {
     }
     
     // Создаем пользователя
+    const baseUserData = {
+      email: userData.email,
+      password: hashedPassword,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      middleName: userData.middleName,
+      phone: userData.phone,
+      role: userData.role || 'PRIMARY_MEMBER',
+      isActive: true,
+      emailVerified: false,
+      membershipValidated: false
+    };
+
+    // Добавляем organizationId только если он определен
+    const userDataToCreate = organizationId 
+      ? { ...baseUserData, organizationId }
+      : baseUserData;
+
     const user = await prisma.user.create({
-      data: {
-        email: userData.email,
-        password: hashedPassword,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        middleName: userData.middleName,
-        phone: userData.phone,
-        role: userData.role || 'PRIMARY_MEMBER',
-        organizationId: organizationId,
-        isActive: true,
-        emailVerified: false,
-        membershipValidated: false
-      },
+      data: userDataToCreate,
       include: {
         organization: true
       }

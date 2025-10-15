@@ -68,7 +68,7 @@ export async function getCurrentUser(): Promise<User | null> {
       middleName: user.middleName || undefined,
       phone: user.phone,
       role: user.role as UserRole,
-      organizationId: user.organizationId,
+      organizationId: user.organizationId || '',
       organizationName: user.organization?.name || 'Неизвестная организация',
       organizationType: user.organization?.type as OrganizationType || 'PRIMARY',
       avatar: user.avatar || undefined,
