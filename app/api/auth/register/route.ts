@@ -3,6 +3,7 @@ import { createToken } from '@/lib/auth';
 import { createUser, findUserByEmail } from '@/lib/db';
 import { canSelfRegister } from '@/lib/role-config';
 import { cookies } from 'next/headers';
+import { OrganizationType } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     // Для ролей, которые могут регистрироваться самостоятельно, 
     // но требуют указания организации
-    let finalOrganizationId = organizationId;
+    const finalOrganizationId = organizationId;
     
     if (role === 'PRIMARY_MEMBER' && !organizationId) {
       return NextResponse.json(
@@ -79,13 +80,13 @@ export async function POST(request: NextRequest) {
       email: newUser.email,
       firstName: newUser.firstName,
       lastName: newUser.lastName,
-      middleName: newUser.middleName,
+      middleName: newUser.middleName || undefined,
       phone: newUser.phone,
       role: newUser.role,
       organizationId: newUser.organizationId,
-      organizationName: newUser.organization?.name || 'Первичная организация',
-      organizationType: newUser.organization?.type || 'PRIMARY',
-      avatar: newUser.avatar,
+      organizationName: 'Первичная организация',
+      organizationType: 'PRIMARY' as OrganizationType,
+      avatar: newUser.avatar || undefined,
       isActive: newUser.isActive,
       emailVerified: newUser.emailVerified,
       membershipValidated: newUser.membershipValidated
@@ -107,7 +108,7 @@ export async function POST(request: NextRequest) {
         email: newUser.email,
         firstName: newUser.firstName,
         lastName: newUser.lastName,
-        middleName: newUser.middleName,
+        middleName: newUser.middleName || undefined,
         phone: newUser.phone,
         role: newUser.role,
         organizationId: newUser.organizationId

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createToken } from '@/lib/auth';
 import { verifyUserPassword } from '@/lib/db';
 import { cookies } from 'next/headers';
+import { UserRole, OrganizationType } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,14 +42,14 @@ export async function POST(request: NextRequest) {
       lastName: user.lastName,
       middleName: user.middleName || undefined,
       phone: user.phone,
-      role: user.role as any,
+      role: user.role as UserRole,
       organizationId: user.organizationId,
       organizationName: user.organization?.name || 'Неизвестная организация',
-      organizationType: user.organization?.type as any || 'PRIMARY',
+      organizationType: user.organization?.type as OrganizationType || 'PRIMARY',
       avatar: user.avatar || undefined,
       isActive: user.isActive,
       emailVerified: user.emailVerified,
-      membershipValidated: (user as any).membershipValidated
+      membershipValidated: user.membershipValidated
     });
 
     // Устанавливаем cookie

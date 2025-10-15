@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Organization, OrganizationType } from '@/types';
 
@@ -45,11 +45,7 @@ export default function OrganizationsPage() {
     chairmanName: ''
   });
 
-  useEffect(() => {
-    fetchOrganizations();
-  }, [searchTerm, typeFilter]);
-
-  const fetchOrganizations = async () => {
+  const fetchOrganizations = useCallback(async () => {
     try {
       setIsLoading(true);
       const params = new URLSearchParams();
@@ -70,7 +66,11 @@ export default function OrganizationsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [searchTerm, typeFilter]);
+
+  useEffect(() => {
+    fetchOrganizations();
+  }, [fetchOrganizations]);
 
   const handleCreateOrganization = async (e: React.FormEvent) => {
     e.preventDefault();

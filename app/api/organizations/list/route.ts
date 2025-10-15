@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Получаем все активные организации
     const organizations = await prisma.organization.findMany({
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { 
         error: 'Ошибка получения списка организаций',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
       },
       { status: 500 }
     );

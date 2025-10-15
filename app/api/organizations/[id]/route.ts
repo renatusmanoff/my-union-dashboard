@@ -71,7 +71,7 @@ const mockOrganizations: Organization[] = [
 // GET - получение организации по ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const currentUser = await getCurrentUser();
@@ -82,7 +82,8 @@ export async function GET(
       );
     }
 
-    const organization = mockOrganizations.find(org => org.id === params.id);
+    const { id } = await params;
+    const organization = mockOrganizations.find(org => org.id === id);
 
     if (!organization) {
       return NextResponse.json(
@@ -108,7 +109,7 @@ export async function GET(
 // PUT - обновление организации
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const currentUser = await getCurrentUser();
@@ -129,7 +130,8 @@ export async function PUT(
     const body = await request.json();
     const { name, type, parentId, address, phone, email, chairmanName, isActive } = body;
 
-    const organizationIndex = mockOrganizations.findIndex(org => org.id === params.id);
+    const { id } = await params;
+    const organizationIndex = mockOrganizations.findIndex(org => org.id === id);
 
     if (organizationIndex === -1) {
       return NextResponse.json(
@@ -174,7 +176,7 @@ export async function PUT(
 // DELETE - удаление организации
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const currentUser = await getCurrentUser();
@@ -192,7 +194,8 @@ export async function DELETE(
       );
     }
 
-    const organizationIndex = mockOrganizations.findIndex(org => org.id === params.id);
+    const { id } = await params;
+    const organizationIndex = mockOrganizations.findIndex(org => org.id === id);
 
     if (organizationIndex === -1) {
       return NextResponse.json(
@@ -202,7 +205,7 @@ export async function DELETE(
     }
 
     // Проверяем, есть ли дочерние организации
-    const hasChildren = mockOrganizations.some(org => org.parentId === params.id);
+    const hasChildren = mockOrganizations.some(org => org.parentId === id);
     if (hasChildren) {
       return NextResponse.json(
         { error: 'Нельзя удалить организацию, у которой есть дочерние организации' },
