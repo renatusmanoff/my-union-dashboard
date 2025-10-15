@@ -111,19 +111,21 @@ export async function createOrganization(data: {
   chairmanName?: string;
 }) {
   try {
+    const organizationDataToCreate: any = {
+      name: data.name,
+      type: data.type as 'FEDERAL' | 'REGIONAL' | 'LOCAL' | 'PRIMARY',
+      address: data.address,
+      phone: data.phone,
+      email: data.email,
+      isActive: true
+    };
+
+    if (data.parentId) {
+      organizationDataToCreate.parentId = data.parentId;
+    }
+
     const organization = await prisma.organization.create({
-      data: {
-        name: data.name,
-        type: data.type as 'FEDERAL' | 'REGIONAL' | 'LOCAL' | 'PRIMARY',
-        industry: 'EDUCATION',
-        parentId: data.parentId,
-        address: data.address,
-        phone: data.phone,
-        email: data.email,
-        chairmanName: data.chairmanName,
-        membersCount: 0,
-        isActive: true
-      }
+      data: organizationDataToCreate
     });
     
     return organization;
