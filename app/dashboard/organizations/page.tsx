@@ -273,6 +273,78 @@ export default function OrganizationsPage() {
     }
   };
 
+  const handleEditOrganization = (organization: Organization) => {
+    setEditingOrg(organization);
+    setShowCreateForm(true);
+    setFormData({
+      name: organization.name,
+      industry: organization.industry,
+      type: organization.type,
+      parentId: organization.parentId || '',
+      address: organization.address,
+      phone: organization.phone,
+      email: organization.email,
+      chairmanName: organization.chairmanName || '',
+      inn: ''
+    });
+  };
+
+  const handleDeleteOrganization = async (organization: Organization) => {
+    if (!confirm(`Вы уверены, что хотите удалить организацию "${organization.name}"?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/organizations/${organization.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Организация успешно удалена');
+        fetchOrganizations(); // Обновляем список
+      } else {
+        alert(data.error || 'Ошибка при удалении организации');
+      }
+    } catch (error) {
+      console.error('Error deleting organization:', error);
+      alert('Ошибка при удалении организации');
+    }
+  };
+
+  const handleUpdateOrganization = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingOrg) return;
+
+    try {
+      const response = await fetch(`/api/organizations/${editingOrg.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Организация успешно обновлена');
+        setEditingOrg(null);
+        setShowCreateForm(false);
+        fetchOrganizations(); // Обновляем список
+      } else {
+        alert(data.error || 'Ошибка при обновлении организации');
+      }
+    } catch (error) {
+      console.error('Error updating organization:', error);
+      alert('Ошибка при обновлении организации');
+    }
+  };
+
   const cancelEdit = () => {
     setEditingOrg(null);
     setShowCreateForm(false);
@@ -399,7 +471,7 @@ export default function OrganizationsPage() {
               <h3 className="text-lg font-semibold mb-4">
                 {editingOrg ? 'Редактировать организацию' : 'Создать новую организацию'}
               </h3>
-              <form onSubmit={handleCreateOrganization} className="space-y-6">
+              <form onSubmit={editingOrg ? handleUpdateOrganization : handleCreateOrganization} className="space-y-6">
                 {/* Organization Data */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -652,12 +724,14 @@ export default function OrganizationsPage() {
                         <td className="px-6 py-4 text-sm">
                           <div className="flex space-x-2">
                             <button 
+                              onClick={() => handleEditOrganization(org)}
                               className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                               title="Редактировать"
                             >
                               <PencilIcon className="w-5 h-5" />
                             </button>
                             <button 
+                              onClick={() => handleDeleteOrganization(org)}
                               className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                               title="Удалить"
                             >

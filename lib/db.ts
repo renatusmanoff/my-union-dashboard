@@ -109,11 +109,13 @@ export async function createOrganization(data: {
   phone: string;
   email: string;
   chairmanName?: string;
+  industry?: string;
 }) {
   try {
     const organizationDataToCreate: Record<string, unknown> = {
       name: data.name,
       type: data.type as 'FEDERAL' | 'REGIONAL' | 'LOCAL' | 'PRIMARY',
+      industry: data.industry || 'EDUCATION',
       address: data.address,
       phone: data.phone,
       email: data.email,

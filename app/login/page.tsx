@@ -7,8 +7,8 @@ import { useRouter } from 'next/navigation';
 export default function LoginPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    email: process.env.NODE_ENV === 'development' ? 'admin@myunion.pro' : '',
+    password: process.env.NODE_ENV === 'development' ? 'admin123!' : ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -185,8 +185,8 @@ export default function LoginPage() {
               Демо-доступ (только для разработки):
             </h3>
             <p className="text-sm text-blue-700 dark:text-blue-300">
-              Email: admin@example.com<br />
-              Пароль: password
+              Email: admin@myunion.pro<br />
+              Пароль: admin123!
             </p>
           </div>
         )}

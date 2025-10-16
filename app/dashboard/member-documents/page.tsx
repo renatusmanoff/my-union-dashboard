@@ -1,329 +1,313 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
-import { 
-  DocumentArrowDownIcon, 
-  EyeIcon, 
-  CheckCircleIcon, 
-  XCircleIcon,
-  ClockIcon
-} from '@heroicons/react/24/outline';
-import { cachedFetch } from '@/lib/cache';
+import { useState, useEffect, useCallback } from 'react';
+import { useUser } from '@/lib/auth';
 
-interface MemberDocument {
+interface Document {
   id: string;
-  type: 'MEMBERSHIP_APPLICATION' | 'CERTIFICATE' | 'CONTRACT' | 'OTHER';
-  title: string;
-  description: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SIGNED';
+  type: string;
+  fileName: string;
+  filePath: string;
+  status: string;
+  signedAt: string | null;
+  sentToUnion: boolean;
+  sentAt: string | null;
   createdAt: string;
-  updatedAt: string;
-  pdfUrl?: string;
-  notes?: string;
 }
 
-const documentTypeLabels = {
-  MEMBERSHIP_APPLICATION: 'Заявление о вступлении в профсоюз',
-  CERTIFICATE: 'Справка о членстве',
-  CONTRACT: 'Договор',
-  OTHER: 'Другой документ'
-};
-
-const statusLabels = {
-  PENDING: 'На рассмотрении',
-  APPROVED: 'Одобрено',
-  REJECTED: 'Отклонено',
-  SIGNED: 'Подписано'
-};
-
-const statusColors = {
-  PENDING: 'bg-orange-500 text-white',
-  APPROVED: 'bg-blue-500 text-white',
-  REJECTED: 'bg-red-500 text-white',
-  SIGNED: 'bg-green-500 text-white'
-};
-
-const statusIcons = {
-  PENDING: ClockIcon,
-  APPROVED: CheckCircleIcon,
-  REJECTED: XCircleIcon,
-  SIGNED: CheckCircleIcon
-};
+interface Application {
+  id: string;
+  firstName: string;
+  lastName: string;
+  middleName: string;
+  status: string;
+  signLater: boolean;
+  documents: Document[];
+  organization: {
+    name: string;
+  };
+  createdAt: string;
+}
 
 export default function MemberDocumentsPage() {
-  const [documents, setDocuments] = useState<MemberDocument[]>([]);
+  const { user } = useUser();
+  const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedDocument, setSelectedDocument] = useState<MemberDocument | null>(null);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchDocuments();
-  }, []);
-
-  const fetchDocuments = async () => {
+  const fetchApplications = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await cachedFetch('/api/member/documents', undefined, 30 * 1000); // 30 seconds cache
-      const data = await response.json();
-
-      if (response.ok) {
-        setDocuments(data.documents || []);
-      } else {
-        console.error('Error fetching documents:', data.error);
+      const response = await fetch('/api/membership/application');
+      
+      if (!response.ok) {
+        throw new Error('Ошибка при загрузке заявлений');
       }
-    } catch (error) {
-      console.error('Error fetching documents:', error);
+      
+      const data = await response.json();
+      setApplications(data.applications || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Произошла ошибка');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const handleViewDocument = (document: MemberDocument) => {
-    setSelectedDocument(document);
-  };
+  useEffect(() => {
+    fetchApplications();
+  }, [fetchApplications]);
 
-  const handleDownloadDocument = (document: MemberDocument) => {
-    if (document.pdfUrl) {
-      window.open(document.pdfUrl, '_blank');
+  const getDocumentTypeLabel = (type: string) => {
+    switch (type) {
+      case 'MEMBERSHIP_APPLICATION':
+        return 'Заявление на вступление в профсоюз';
+      case 'CONSENT_PERSONAL_DATA':
+        return 'Согласие на обработку персональных данных';
+      case 'PAYMENT_DEDUCTION':
+        return 'Заявление на удержание взносов';
+      default:
+        return type;
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ru-RU', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'NOT_SIGNED':
+        return 'Не подписано';
+      case 'SIGNED':
+        return 'Подписано';
+      case 'REJECTED':
+        return 'Отклонено';
+      default:
+        return status;
+    }
   };
 
-  return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 
-              className="text-2xl font-bold"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              Документооборот
-            </h1>
-            <p style={{ color: 'var(--text-secondary)' }}>
-              Список ваших документов и заявлений
-            </p>
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'NOT_SIGNED':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'SIGNED':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 'REJECTED':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+    }
+  };
+
+  const getApplicationStatusLabel = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return 'На рассмотрении';
+      case 'APPROVED':
+        return 'Одобрено';
+      case 'REJECTED':
+        return 'Отклонено';
+      default:
+        return status;
+    }
+  };
+
+  const getApplicationStatusColor = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'APPROVED':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
+      case 'REJECTED':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
+    }
+  };
+
+  const handleSignDocument = async (documentId: string) => {
+    try {
+      const response = await fetch(`/api/membership/documents/${documentId}/sign`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка при подписании документа');
+      }
+
+      // Обновляем список заявлений
+      await fetchApplications();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Произошла ошибка при подписании');
+    }
+  };
+
+  const handleSendToUnion = async (documentId: string) => {
+    try {
+      const response = await fetch(`/api/membership/documents/${documentId}/send`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Ошибка при отправке документа');
+      }
+
+      // Обновляем список заявлений
+      await fetchApplications();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Произошла ошибка при отправке');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
           </div>
         </div>
+      </div>
+    );
+  }
 
-        {/* Documents List */}
-        <div 
-          className="rounded-lg shadow-sm"
-          style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
-        >
-          <div className="p-6">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-32">
-                <div className="text-gray-500">Загрузка документов...</div>
-              </div>
-            ) : documents.length === 0 ? (
-              <div className="text-center py-12">
-                <DocumentArrowDownIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
-                  Документы не найдены
-                </h3>
-                <p style={{ color: 'var(--text-secondary)' }}>
-                  У вас пока нет документов в системе
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {documents.map((document) => {
-                  const StatusIcon = statusIcons[document.status];
-                  
-                  return (
-                    <div
-                      key={document.id}
-                      className="flex items-center justify-between p-4 rounded-lg border"
-                      style={{ 
-                        backgroundColor: 'var(--background)', 
-                        borderColor: 'var(--card-border)' 
-                      }}
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div className="flex-shrink-0">
-                          <DocumentArrowDownIcon 
-                            className="h-8 w-8"
-                            style={{ color: 'var(--text-secondary)' }}
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 
-                            className="text-sm font-medium truncate"
-                            style={{ color: 'var(--text-primary)' }}
-                          >
-                            {documentTypeLabels[document.type]}
-                          </h3>
-                          <p 
-                            className="text-sm truncate"
-                            style={{ color: 'var(--text-secondary)' }}
-                          >
-                            {document.description}
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Мои документы
+          </h1>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            Управление документами заявлений на вступление в профсоюз
+          </p>
+        </div>
+      </div>
+
+      {/* Applications List */}
+      <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+            Заявления на вступление в профсоюз
+          </h2>
+        </div>
+
+        {applications.length === 0 ? (
+          <div className="px-6 py-8 text-center">
+            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+              Нет заявлений
+            </h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              У вас пока нет заявлений на вступление в профсоюз.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200 dark:divide-gray-700">
+            {applications.map((application) => (
+              <div key={application.id} className="px-6 py-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                      {application.lastName} {application.firstName} {application.middleName}
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Организация: {application.organization.name}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Дата подачи: {new Date(application.createdAt).toLocaleDateString('ru-RU')}
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getApplicationStatusColor(application.status)}`}>
+                      {getApplicationStatusLabel(application.status)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Documents */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                    Документы:
+                  </h4>
+                  {application.documents.map((document) => (
+                    <div key={document.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {getDocumentTypeLabel(document.type)}
                           </p>
-                          <p 
-                            className="text-xs"
-                            style={{ color: 'var(--text-muted)' }}
-                          >
-                            Создано: {formatDate(document.createdAt)}
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {document.fileName}
                           </p>
                         </div>
                       </div>
-                      
                       <div className="flex items-center space-x-3">
-                        {/* Status Badge */}
-                        <div className="flex items-center space-x-2">
-                          <StatusIcon className="h-4 w-4" />
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[document.status]}`}>
-                            {statusLabels[document.status]}
-                          </span>
-                        </div>
-                        
-                        {/* Actions */}
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleViewDocument(document)}
-                            className="p-2 rounded-lg transition-colors hover:opacity-70"
-                            style={{ 
-                              backgroundColor: 'var(--card-bg)', 
-                              color: 'var(--text-secondary)' 
-                            }}
-                            title="Просмотр"
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(document.status)}`}>
+                          {getStatusLabel(document.status)}
+                        </span>
+                        <div className="flex space-x-2">
+                          <a
+                            href={document.filePath}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
                           >
-                            <EyeIcon className="h-4 w-4" />
-                          </button>
-                          
-                          {document.pdfUrl && (
+                            Скачать
+                          </a>
+                          {document.status === 'NOT_SIGNED' && (
                             <button
-                              onClick={() => handleDownloadDocument(document)}
-                              className="p-2 rounded-lg transition-colors hover:opacity-70"
-                              style={{ 
-                                backgroundColor: 'var(--card-bg)', 
-                                color: 'var(--text-secondary)' 
-                              }}
-                              title="Скачать PDF"
+                              onClick={() => handleSignDocument(document.id)}
+                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-primary-600 hover:bg-primary-700"
                             >
-                              <DocumentArrowDownIcon className="h-4 w-4" />
+                              Подписать
                             </button>
+                          )}
+                          {document.status === 'SIGNED' && !document.sentToUnion && (
+                            <button
+                              onClick={() => handleSendToUnion(document.id)}
+                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-green-600 hover:bg-green-700"
+                            >
+                              Отправить в профсоюз
+                            </button>
+                          )}
+                          {document.sentToUnion && (
+                            <span className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 dark:bg-green-900/20 dark:text-green-400">
+                              Отправлено
+                            </span>
                           )}
                         </div>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Document Details Modal */}
-        {selectedDocument && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div 
-              className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
-              style={{ backgroundColor: 'var(--card-bg)' }}
-            >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 
-                    className="text-xl font-semibold"
-                    style={{ color: 'var(--text-primary)' }}
-                  >
-                    {documentTypeLabels[selectedDocument.type]}
-                  </h2>
-                  <button
-                    onClick={() => setSelectedDocument(null)}
-                    className="p-2 rounded-lg transition-colors hover:opacity-70"
-                    style={{ color: 'var(--text-secondary)' }}
-                  >
-                    <XCircleIcon className="h-6 w-6" />
-                  </button>
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                      Описание
-                    </label>
-                    <p style={{ color: 'var(--text-primary)' }}>
-                      {selectedDocument.description}
-                    </p>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                        Статус
-                      </label>
-                      <div className="flex items-center space-x-2">
-                        {(() => {
-                          const StatusIcon = statusIcons[selectedDocument.status];
-                          return <StatusIcon className="h-4 w-4" />;
-                        })()}
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[selectedDocument.status]}`}>
-                          {statusLabels[selectedDocument.status]}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                        Дата создания
-                      </label>
-                      <p style={{ color: 'var(--text-primary)' }}>
-                        {formatDate(selectedDocument.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {selectedDocument.updatedAt !== selectedDocument.createdAt && (
-                    <div>
-                      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                        Последнее обновление
-                      </label>
-                      <p style={{ color: 'var(--text-primary)' }}>
-                        {formatDate(selectedDocument.updatedAt)}
-                      </p>
-                    </div>
-                  )}
-                  
-                  {selectedDocument.notes && (
-                    <div>
-                      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                        Комментарии
-                      </label>
-                      <p style={{ color: 'var(--text-primary)' }}>
-                        {selectedDocument.notes}
-                      </p>
-                    </div>
-                  )}
-                  
-                  {selectedDocument.pdfUrl && (
-                    <div className="pt-4 border-t" style={{ borderColor: 'var(--card-border)' }}>
-                      <button
-                        onClick={() => handleDownloadDocument(selectedDocument)}
-                        className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        <DocumentArrowDownIcon className="h-4 w-4" />
-                        <span>Скачать PDF</span>
-                      </button>
-                    </div>
-                  )}
+                  ))}
                 </div>
               </div>
-            </div>
+            ))}
           </div>
         )}
       </div>
-    </DashboardLayout>
+    </div>
   );
 }

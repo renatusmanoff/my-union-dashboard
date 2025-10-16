@@ -9,7 +9,9 @@
     "lint": "eslint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:seed": "npx tsx prisma/seed.ts"
+    "db:seed": "npx tsx prisma/seed.ts",
+    "db:migrate": "node scripts/migrate.js",
+    "db:reset": "prisma db push --force-reset"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

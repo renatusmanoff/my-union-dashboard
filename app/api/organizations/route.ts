@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, type, address, phone, email, parentId } = body;
+    const { name, type, address, phone, email, parentId, industry } = body;
 
     if (!name || !type || !address || !phone || !email) {
       return NextResponse.json(
@@ -70,7 +70,8 @@ export async function POST(request: NextRequest) {
       address,
       phone,
       email,
-      parentId
+      parentId,
+      industry: industry || 'EDUCATION'
     });
 
     return NextResponse.json({

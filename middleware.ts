@@ -4,7 +4,14 @@ import { NextRequest, NextResponse } from 'next/server';
 const protectedRoutes = [
   '/dashboard',
   '/api/admin',
-  '/api/membership'
+  '/api/membership/application'
+];
+
+// Публичные API маршруты (не требуют авторизации)
+const publicApiRoutes = [
+  '/api/membership/register',
+  '/api/organizations/public',
+  '/api/organizations/search-inn'
 ];
 
 // Маршруты, которые доступны только неавторизованным пользователям
@@ -42,6 +49,16 @@ export async function middleware(request: NextRequest) {
   
   // Получаем токен из cookies
   const token = request.cookies.get('auth-token')?.value;
+  
+  // Проверяем, является ли маршрут публичным API
+  const isPublicApiRoute = publicApiRoutes.some(route => 
+    pathname === route
+  );
+  
+  // Если это публичный API маршрут, пропускаем без проверки авторизации
+  if (isPublicApiRoute) {
+    return NextResponse.next();
+  }
   
   // Проверяем, является ли маршрут защищенным
   const isProtectedRoute = protectedRoutes.some(route => 

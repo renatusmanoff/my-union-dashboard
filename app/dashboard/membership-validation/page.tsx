@@ -3,6 +3,28 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { MembershipApplication } from '@/types';
+
+// Расширенный интерфейс для заявлений с документами
+interface ExtendedMembershipApplication extends Omit<MembershipApplication, 'applicationDate'> {
+  documents?: Array<{
+    id: string;
+    type: string;
+    fileName: string;
+    filePath: string;
+    status: string;
+    signedAt?: string;
+    sentToUnion: boolean;
+    sentAt?: string;
+  }>;
+  organization?: {
+    id: string;
+    name: string;
+    type: string;
+    address: string;
+  };
+  signLater?: boolean;
+  applicationDate: string;
+}
 import { 
   EyeIcon, 
   DocumentArrowDownIcon, 
@@ -12,9 +34,9 @@ import {
 import { cachedFetch } from '@/lib/cache';
 
 export default function MembershipValidationPage() {
-  const [applications, setApplications] = useState<MembershipApplication[]>([]);
+  const [applications, setApplications] = useState<ExtendedMembershipApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedApplication, setSelectedApplication] = useState<MembershipApplication | null>(null);
+  const [selectedApplication, setSelectedApplication] = useState<ExtendedMembershipApplication | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('ALL');
   const [generatingPDF, setGeneratingPDF] = useState<string | null>(null);
@@ -169,6 +191,9 @@ export default function MembershipValidationPage() {
                         Дата подачи
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                        Документы
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                         Статус
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
@@ -193,6 +218,34 @@ export default function MembershipValidationPage() {
                         </td>
                         <td className="px-6 py-4 text-sm">
                           {new Date(application.applicationDate).toLocaleDateString('ru-RU')}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-1">
+                            {application.documents && application.documents.length > 0 ? (
+                              application.documents.map((doc: any, index: number) => (
+                                <span
+                                  key={doc.id || index}
+                                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                    doc.status === 'NOT_SIGNED' ? 'bg-orange-100 text-orange-600' :
+                                    doc.status === 'SIGNED' ? 'bg-green-100 text-green-600' :
+                                    'bg-red-100 text-red-600'
+                                  }`}
+                                  title={`${doc.type === 'MEMBERSHIP_APPLICATION' ? 'Заявление' :
+                                          doc.type === 'CONSENT_PERSONAL_DATA' ? 'Согласие' :
+                                          doc.type === 'PAYMENT_DEDUCTION' ? 'Удержание' : doc.type} - ${
+                                          doc.status === 'NOT_SIGNED' ? 'Не подписано' :
+                                          doc.status === 'SIGNED' ? 'Подписано' : 'Отклонено'
+                                        }`}
+                                >
+                                  {doc.type === 'MEMBERSHIP_APPLICATION' ? 'З' :
+                                   doc.type === 'CONSENT_PERSONAL_DATA' ? 'С' :
+                                   doc.type === 'PAYMENT_DEDUCTION' ? 'У' : 'Д'}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-xs text-gray-400">Нет документов</span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(application.status)}`}>
@@ -278,88 +331,107 @@ export default function MembershipValidationPage() {
                     </div>
                   </div>
 
-                  {/* Образование и работа */}
-                  <div>
-                    <h4 className="font-medium mb-3">Образование и работа</h4>
-                    <div className="space-y-2 text-sm">
-                      <p><span className="font-medium">Образование:</span> {selectedApplication.education}</p>
-                      {selectedApplication.specialties.length > 0 && (
-                        <div>
-                          <span className="font-medium">Специальности:</span>
-                          <ul className="list-disc list-inside ml-2">
-                            {selectedApplication.specialties.map((spec, index) => (
-                              <li key={index}>{spec}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {selectedApplication.positions.length > 0 && (
-                        <div>
-                          <span className="font-medium">Должности:</span>
-                          <ul className="list-disc list-inside ml-2">
-                            {selectedApplication.positions.map((pos, index) => (
-                              <li key={index}>{pos}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
                   {/* Адрес */}
                   <div>
                     <h4 className="font-medium mb-3">Адрес проживания</h4>
                     <div className="text-sm">
-                      <p>{selectedApplication.address.index}, {selectedApplication.address.region}</p>
-                      <p>{selectedApplication.address.municipality}, {selectedApplication.address.locality}</p>
-                      <p>{selectedApplication.address.street}, д. {selectedApplication.address.house}</p>
-                      {selectedApplication.address.apartment && (
-                        <p>кв. {selectedApplication.address.apartment}</p>
-                      )}
+                      {(() => {
+                        try {
+                          const address = typeof selectedApplication.address === 'string' 
+                            ? JSON.parse(selectedApplication.address) 
+                            : selectedApplication.address;
+                          return (
+                            <>
+                              <p>{address.index}, {address.region}</p>
+                              <p>{address.locality}</p>
+                              <p>{address.street}, д. {address.house}</p>
+                              {address.apartment && (
+                                <p>кв. {address.apartment}</p>
+                              )}
+                            </>
+                          );
+                        } catch (error) {
+                          return <p>Адрес не указан</p>;
+                        }
+                      })()}
                     </div>
                   </div>
 
-                  {/* Дополнительная информация */}
+                  {/* Организация */}
                   <div>
-                    <h4 className="font-medium mb-3">Дополнительная информация</h4>
+                    <h4 className="font-medium mb-3">Организация</h4>
                     <div className="space-y-2 text-sm">
-                      {selectedApplication.children && selectedApplication.children.length > 0 && (
-                        <div>
-                          <span className="font-medium">Дети:</span>
-                          <ul className="list-disc list-inside ml-2">
-                            {selectedApplication.children.map((child, index) => (
-                              <li key={index}>
-                                {child.name} ({new Date(child.dateOfBirth).toLocaleDateString('ru-RU')})
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {selectedApplication.hobbies.length > 0 && (
-                        <div>
-                          <span className="font-medium">Увлечения:</span>
-                          <p>{selectedApplication.hobbies.join(', ')}</p>
-                        </div>
+                      <p><span className="font-medium">Название:</span> {selectedApplication.organization?.name || 'Не указано'}</p>
+                      <p><span className="font-medium">Тип:</span> {selectedApplication.organization?.type || 'Не указан'}</p>
+                      <p><span className="font-medium">Адрес:</span> {selectedApplication.organization?.address || 'Не указан'}</p>
+                    </div>
+                  </div>
+
+                  {/* Статус заявления */}
+                  <div>
+                    <h4 className="font-medium mb-3">Статус заявления</h4>
+                    <div className="space-y-2 text-sm">
+                      <p><span className="font-medium">Статус:</span> 
+                        <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
+                          selectedApplication.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                          selectedApplication.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {selectedApplication.status === 'PENDING' ? 'На рассмотрении' :
+                           selectedApplication.status === 'APPROVED' ? 'Одобрено' : 'Отклонено'}
+                        </span>
+                      </p>
+                      <p><span className="font-medium">Дата подачи:</span> {new Date(selectedApplication.createdAt).toLocaleDateString('ru-RU')}</p>
+                      {selectedApplication.signLater && (
+                        <p><span className="font-medium">Подписание:</span> <span className="text-yellow-600">Отложено</span></p>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* PDF заявления */}
-                {selectedApplication.pdfUrl && (
+                {/* Документы заявления */}
+                {selectedApplication.documents && selectedApplication.documents.length > 0 && (
                   <div className="mt-6">
-                    <h4 className="font-medium mb-3">PDF заявления</h4>
-                    <a
-                      href={selectedApplication.pdfUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      Скачать PDF заявления
-                    </a>
+                    <h4 className="font-medium mb-3">Документы заявления</h4>
+                    <div className="space-y-3">
+                      {selectedApplication.documents.map((doc: any) => (
+                        <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <div>
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                {doc.type === 'MEMBERSHIP_APPLICATION' ? 'Заявление на вступление в профсоюз' :
+                                 doc.type === 'CONSENT_PERSONAL_DATA' ? 'Согласие на обработку персональных данных' :
+                                 doc.type === 'PAYMENT_DEDUCTION' ? 'Заявление на удержание взносов' : doc.type}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {doc.fileName}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              doc.status === 'NOT_SIGNED' ? 'bg-orange-100 text-orange-600' :
+                              doc.status === 'SIGNED' ? 'bg-green-100 text-green-600' :
+                              'bg-red-100 text-red-600'
+                            }`}>
+                              {doc.status === 'NOT_SIGNED' ? 'Не подписано' :
+                               doc.status === 'SIGNED' ? 'Подписано' : 'Отклонено'}
+                            </span>
+                            <a
+                              href={doc.filePath}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                            >
+                              Скачать
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 

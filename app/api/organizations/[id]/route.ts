@@ -1,25 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, canCreateOrganizations } from '@/lib/auth';
-import { Organization } from '@/types';
-
-// Реальные российские профсоюзы (в реальности это будет база данных)
-const realOrganizations: Organization[] = [
-  {
-    id: '1',
-    name: 'Федерация независимых профсоюзов России (ФНПР)',
-    type: 'FEDERAL',
-    industry: 'EDUCATION',
-    address: 'г. Москва, ул. Ленинская Слобода, д. 19',
-    phone: '+7 (495) 623-45-67',
-    email: 'info@fnpr.ru',
-    chairmanName: 'Михаил Викторович Шмаков',
-    chairmanId: 'chairman-1',
-    isActive: true,
-    membersCount: 20000000,
-    createdAt: new Date('1990-12-01'),
-    updatedAt: new Date('2024-01-01')
-  }
-];
+import { prisma } from '@/lib/database';
 
 // GET - получение организации по ID
 export async function GET(
@@ -36,7 +17,25 @@ export async function GET(
     }
 
     const { id } = await params;
-    const organization = realOrganizations.find(org => org.id === id);
+    const organization = await prisma.organization.findUnique({
+      where: { id },
+      include: {
+        users: {
+          where: {
+            role: {
+              in: ['FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
+            }
+          },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            middleName: true,
+            role: true
+          }
+        }
+      }
+    });
 
     if (!organization) {
       return NextResponse.json(
@@ -81,12 +80,16 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, type, parentId, address, phone, email, chairmanName, isActive } = body;
+    const { name, type, parentId, address, phone, email, chairmanName, isActive, industry } = body;
 
     const { id } = await params;
-    const organizationIndex = realOrganizations.findIndex(org => org.id === id);
+    
+    // Проверяем, существует ли организация
+    const existingOrganization = await prisma.organization.findUnique({
+      where: { id }
+    });
 
-    if (organizationIndex === -1) {
+    if (!existingOrganization) {
       return NextResponse.json(
         { error: 'Организация не найдена' },
         { status: 404 }
@@ -94,22 +97,36 @@ export async function PUT(
     }
 
     // Обновляем организацию
-    const updatedOrganization: Organization = {
-      ...realOrganizations[organizationIndex],
-      name: name || realOrganizations[organizationIndex].name,
-      type: type || realOrganizations[organizationIndex].type,
-      parentId: parentId !== undefined ? parentId : realOrganizations[organizationIndex].parentId,
-      parentName: parentId ? realOrganizations.find(org => org.id === parentId)?.name : realOrganizations[organizationIndex].parentName,
-      address: address || realOrganizations[organizationIndex].address,
-      phone: phone || realOrganizations[organizationIndex].phone,
-      email: email || realOrganizations[organizationIndex].email,
-      chairmanName: chairmanName !== undefined ? chairmanName : realOrganizations[organizationIndex].chairmanName,
-      chairmanId: chairmanName ? realOrganizations[organizationIndex].chairmanId : undefined,
-      isActive: isActive !== undefined ? isActive : realOrganizations[organizationIndex].isActive,
-      updatedAt: new Date()
-    };
-
-    realOrganizations[organizationIndex] = updatedOrganization;
+    const updatedOrganization = await prisma.organization.update({
+      where: { id },
+      data: {
+        name: name || existingOrganization.name,
+        type: type || existingOrganization.type,
+        parentId: parentId !== undefined ? parentId : existingOrganization.parentId,
+        address: address || existingOrganization.address,
+        phone: phone || existingOrganization.phone,
+        email: email || existingOrganization.email,
+        chairmanName: chairmanName !== undefined ? chairmanName : existingOrganization.chairmanName,
+        isActive: isActive !== undefined ? isActive : existingOrganization.isActive,
+        industry: industry || existingOrganization.industry
+      },
+      include: {
+        users: {
+          where: {
+            role: {
+              in: ['FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
+            }
+          },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            middleName: true,
+            role: true
+          }
+        }
+      }
+    });
 
     return NextResponse.json({
       success: true,
@@ -148,9 +165,13 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const organizationIndex = realOrganizations.findIndex(org => org.id === id);
+    
+    // Проверяем, существует ли организация
+    const existingOrganization = await prisma.organization.findUnique({
+      where: { id }
+    });
 
-    if (organizationIndex === -1) {
+    if (!existingOrganization) {
       return NextResponse.json(
         { error: 'Организация не найдена' },
         { status: 404 }
@@ -158,17 +179,33 @@ export async function DELETE(
     }
 
     // Проверяем, есть ли дочерние организации
-    const hasChildren = realOrganizations.some(org => org.parentId === id);
-    if (hasChildren) {
+    const hasChildren = await prisma.organization.count({
+      where: { parentId: id }
+    });
+    
+    if (hasChildren > 0) {
       return NextResponse.json(
         { error: 'Нельзя удалить организацию, у которой есть дочерние организации' },
         { status: 400 }
       );
     }
 
+    // Проверяем, есть ли пользователи в организации
+    const hasUsers = await prisma.user.count({
+      where: { organizationId: id }
+    });
+    
+    if (hasUsers > 0) {
+      return NextResponse.json(
+        { error: 'Нельзя удалить организацию, в которой есть пользователи' },
+        { status: 400 }
+      );
+    }
+
     // Удаляем организацию
-    const deletedOrganization = realOrganizations[organizationIndex];
-    realOrganizations.splice(organizationIndex, 1);
+    const deletedOrganization = await prisma.organization.delete({
+      where: { id }
+    });
 
     return NextResponse.json({
       success: true,

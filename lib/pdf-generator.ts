@@ -1,4 +1,5 @@
 import puppeteer from 'puppeteer';
+import { MembershipApplication, Organization, User } from '@prisma/client';
 
 export async function generateApplicationPDF(application: unknown): Promise<string> {
   try {
@@ -385,4 +386,300 @@ export async function generatePDFFromHTML(html: string, fileName: string): Promi
     console.error('Error generating PDF from HTML:', error);
     throw new Error('Не удалось сгенерировать PDF');
   }
+}
+
+// Интерфейс для данных генерации документов
+interface MembershipDocumentData {
+  application: MembershipApplication;
+  organization: Organization & { chairman?: User | null };
+  chairman?: User | null;
+}
+
+// Интерфейс для результата генерации
+interface GeneratedDocument {
+  type: 'MEMBERSHIP_APPLICATION' | 'CONSENT_PERSONAL_DATA' | 'PAYMENT_DEDUCTION';
+  fileName: string;
+  filePath: string;
+}
+
+// Генерация трех документов для заявления на вступление в профсоюз
+export async function generateMembershipDocuments(data: MembershipDocumentData): Promise<GeneratedDocument[]> {
+  const { application, organization, chairman } = data;
+  
+  try {
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    
+    const documents: GeneratedDocument[] = [];
+    
+    // 1. Заявление на вступление в профсоюз
+    const membershipApplicationHTML = generateMembershipApplicationHTML(application, organization, chairman);
+    const membershipApplicationPDF = await generatePDFFromHTMLWithBrowser(browser, membershipApplicationHTML);
+    const membershipApplicationFileName = `membership_application_${application.id}_${Date.now()}.pdf`;
+    const membershipApplicationPath = await savePDF(membershipApplicationPDF, membershipApplicationFileName);
+    
+    documents.push({
+      type: 'MEMBERSHIP_APPLICATION',
+      fileName: membershipApplicationFileName,
+      filePath: membershipApplicationPath
+    });
+    
+    // 2. Согласие на обработку персональных данных
+    const consentHTML = generateConsentHTML(application, organization, chairman);
+    const consentPDF = await generatePDFFromHTMLWithBrowser(browser, consentHTML);
+    const consentFileName = `consent_personal_data_${application.id}_${Date.now()}.pdf`;
+    const consentPath = await savePDF(consentPDF, consentFileName);
+    
+    documents.push({
+      type: 'CONSENT_PERSONAL_DATA',
+      fileName: consentFileName,
+      filePath: consentPath
+    });
+    
+    // 3. Заявление на удержание взносов
+    const paymentHTML = generatePaymentDeductionHTML(application, organization, chairman);
+    const paymentPDF = await generatePDFFromHTMLWithBrowser(browser, paymentHTML);
+    const paymentFileName = `payment_deduction_${application.id}_${Date.now()}.pdf`;
+    const paymentPath = await savePDF(paymentPDF, paymentFileName);
+    
+    documents.push({
+      type: 'PAYMENT_DEDUCTION',
+      fileName: paymentFileName,
+      filePath: paymentPath
+    });
+    
+    await browser.close();
+    
+    return documents;
+    
+  } catch (error) {
+    console.error('Error generating membership documents:', error);
+    throw new Error('Не удалось сгенерировать документы');
+  }
+}
+
+// Вспомогательная функция для генерации PDF из HTML
+async function generatePDFFromHTMLWithBrowser(browser: any, html: string): Promise<Buffer> {
+  const page = await browser.newPage();
+  await page.setContent(html, { waitUntil: 'networkidle0' });
+  
+  const pdfBuffer = await page.pdf({
+    format: 'A4',
+    printBackground: true,
+    margin: {
+      top: '20mm',
+      right: '15mm',
+      bottom: '20mm',
+      left: '15mm'
+    }
+  });
+  
+  await page.close();
+  return pdfBuffer;
+}
+
+// Вспомогательная функция для сохранения PDF
+async function savePDF(pdfBuffer: Buffer, fileName: string): Promise<string> {
+  const fs = await import('fs');
+  const path = await import('path');
+  
+  const documentsDir = path.join(process.cwd(), 'public', 'documents');
+  if (!fs.existsSync(documentsDir)) {
+    fs.mkdirSync(documentsDir, { recursive: true });
+  }
+  
+  const filePath = path.join(documentsDir, fileName);
+  fs.writeFileSync(filePath, pdfBuffer);
+  
+  return `/documents/${fileName}`;
+}
+
+// Генерация HTML для заявления на вступление в профсоюз
+function generateMembershipApplicationHTML(application: MembershipApplication, organization: Organization, chairman?: User | null): string {
+  const chairmanName = chairman ? `${chairman.lastName} ${chairman.firstName} ${chairman.middleName || ''}`.trim() : organization.chairmanName || 'Председатель';
+  const applicantName = `${application.lastName} ${application.firstName} ${application.middleName || ''}`.trim();
+  const currentDate = new Date().toLocaleDateString('ru-RU');
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Заявление на вступление в профсоюз</title>
+      <style>
+        body { font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; margin: 0; padding: 20px; }
+        .header { text-align: right; margin-bottom: 30px; }
+        .title { text-align: center; font-weight: bold; font-size: 16px; margin: 30px 0; }
+        .content { margin: 20px 0; }
+        .signature { margin-top: 50px; }
+        .date { margin-top: 30px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        Председателю первичной профсоюзной организации<br>
+        ${organization.name}<br>
+        ${chairmanName}
+      </div>
+      
+      <div class="header">
+        от ${applicantName}
+      </div>
+      
+      <div class="title">ЗАЯВЛЕНИЕ</div>
+      
+      <div class="content">
+        Прошу принять меня в ${organization.name} «${currentDate}».
+      </div>
+      
+      <div class="content">
+        С уставом ${organization.name} ознакомлен(а) и обязуюсь исполнять.
+      </div>
+      
+      <div class="date">
+        «${currentDate}»
+      </div>
+      
+      <div class="signature">
+        Личная подпись _________________
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+// Генерация HTML для согласия на обработку персональных данных
+function generateConsentHTML(application: MembershipApplication, organization: Organization, chairman?: User | null): string {
+  const chairmanName = chairman ? `${chairman.lastName} ${chairman.firstName} ${chairman.middleName || ''}`.trim() : organization.chairmanName || 'Председатель';
+  const applicantName = `${application.lastName} ${application.firstName} ${application.middleName || ''}`.trim();
+  const currentDate = new Date().toLocaleDateString('ru-RU');
+  
+  // Парсим адрес и формируем строку адреса
+  let addressString = '';
+  try {
+    const address = typeof application.address === 'string' ? JSON.parse(application.address) : application.address;
+    const addressParts = [
+      address.index,
+      address.region,
+      address.locality,
+      address.street,
+      address.house ? `д. ${address.house}` : '',
+      address.apartment ? `кв. ${address.apartment}` : ''
+    ].filter(part => part && part.trim() !== '');
+    
+    addressString = addressParts.join(', ');
+  } catch (error) {
+    console.error('Error parsing address:', error);
+    addressString = 'адрес не указан';
+  }
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Согласие на обработку персональных данных</title>
+      <style>
+        body { font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; margin: 0; padding: 20px; }
+        .title { text-align: center; font-weight: bold; font-size: 16px; margin: 30px 0; }
+        .content { margin: 20px 0; text-align: justify; }
+        .signature { margin-top: 50px; }
+        .date { margin-top: 30px; }
+      </style>
+    </head>
+    <body>
+      <div class="title">Согласие на обработку персональных данных</div>
+      
+      <div class="content">
+        Я, ${applicantName}, дата рождения: ${application.dateOfBirth.toLocaleDateString('ru-RU')}, 
+        зарегистрированный(ая) по адресу: ${addressString}, даю согласие на обработку 
+        моих персональных данных:
+      </div>
+      
+      <div class="content">
+        - фамилия, имя, отчество;<br>
+        - год, месяц, дата рождения;<br>
+        - адрес проживания;<br>
+        - сведения об образовании и профессиональной деятельности;<br>
+        - сведения о составе семьи;<br>
+        - и иные сведения, необходимые для предоставления услуг от:
+      </div>
+      
+      <div class="content">
+        Наименование профсоюзной организации: ${organization.name}<br>
+        Председатель профсоюзной организации: ${chairmanName}
+      </div>
+      
+      <div class="content">
+        Настоящее согласие является бессрочным и вступает в силу с момента его подписания.
+      </div>
+      
+      <div class="content">
+        Процесс подписания данного Согласия на обработку персональных данных выполнен в электронной форме 
+        и считается подписанным в момент установки символа в <strong>чекбоке</strong>.
+      </div>
+      
+      <div class="content">
+        Согласие может быть отозвано в любое время на основании письменного заявления субъекта персональных данных.
+      </div>
+      
+      <div class="date">
+        ${currentDate}
+      </div>
+      
+      <div class="signature">
+        Личная подпись _________________
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+// Генерация HTML для заявления на удержание взносов
+function generatePaymentDeductionHTML(application: MembershipApplication, organization: Organization, chairman?: User | null): string {
+  const chairmanName = chairman ? `${chairman.lastName} ${chairman.firstName} ${chairman.middleName || ''}`.trim() : organization.chairmanName || 'Председатель';
+  const applicantName = `${application.lastName} ${application.firstName} ${application.middleName || ''}`.trim();
+  const currentDate = new Date().toLocaleDateString('ru-RU');
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Заявление на удержание взносов</title>
+      <style>
+        body { font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.5; margin: 0; padding: 20px; }
+        .header { text-align: right; margin-bottom: 30px; }
+        .title { text-align: center; font-weight: bold; font-size: 16px; margin: 30px 0; }
+        .content { margin: 20px 0; text-align: justify; }
+        .signature { margin-top: 50px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        Руководителю (главному врачу, директору)<br>
+        ${organization.name}<br>
+        ${chairmanName}
+      </div>
+      
+      <div class="header">
+        от ${applicantName}
+      </div>
+      
+      <div class="title">ЗАЯВЛЕНИЕ</div>
+      
+      <div class="content">
+        На основании ст.28 Федерального закона «О профессиональных союзах, их правах и гарантиях деятельности» 
+        прошу ежемесячно удерживать из моей заработной платы членские профсоюзные взносы в размере 1% 
+        (один процент) и перечислять их на счет профсоюзной организации с ${currentDate}.
+      </div>
+      
+      <div class="signature">
+        Подпись _________________
+      </div>
+    </body>
+    </html>
+  `;
 }

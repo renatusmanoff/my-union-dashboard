@@ -49,6 +49,9 @@ model User {
   // Созданные проекты
   createdProjects Project[]
   
+  // Заявления на вступление в профсоюз
+  membershipApplications MembershipApplication[]
+  
   // Созданные события календаря
   createdEvents   CalendarEvent[]
   
@@ -83,6 +86,7 @@ model Organization {
 
   // Связи
   users         User[]
+  membershipApplications MembershipApplication[]
   news          News[]
   tasks         Task[]
   documents     Document[]
@@ -93,7 +97,6 @@ model Organization {
   employees     Employee[]
   members       UnionMember[]
   reports       Report[]
-  applications  MembershipApplication[]
 
   @@map("organizations")
 }
@@ -108,47 +111,47 @@ model MembershipApplication {
   middleName      String?
   dateOfBirth     DateTime
   gender          Gender
-  photo           String?
-  
-  // Образование и работа
-  education       String
-  specialties     String[]  // Массив специальностей
-  positions       String[]  // Массив должностей
-  
-  // Адрес проживания
-  addressIndex    String
-  addressRegion   String
-  addressMunicipality String
-  addressLocality String
-  addressStreet   String
-  addressHouse    String
-  addressApartment String?
-  
-  // Контакты
   phone           String
-  additionalPhone String?
-  email           String
-  
-  // Дополнительная информация
-  children        Json?    // JSON массив детей
-  hobbies         String[] // Массив увлечений
+  address         String   // JSON строка с адресом
   
   // Данные заявления
   organizationId  String
   organization    Organization @relation(fields: [organizationId], references: [id])
-  applicationDate DateTime
   status          ApplicationStatus @default(PENDING)
+  signLater       Boolean @default(false)
   reviewedBy      String?
   reviewedAt      DateTime?
   rejectionReason String?
   
-  // PDF заявления
-  pdfUrl          String?
+  // Связь с пользователем (может быть null для незарегистрированных)
+  userId          String?
+  user            User? @relation(fields: [userId], references: [id])
+  
+  // Документы заявления
+  documents       MembershipDocument[]
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
   @@map("membership_applications")
+}
+
+model MembershipDocument {
+  id              String   @id @default(cuid())
+  applicationId   String
+  application     MembershipApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  type            MembershipDocumentType
+  fileName        String
+  filePath        String
+  status          DocumentSignatureStatus @default(NOT_SIGNED)
+  signedAt        DateTime?
+  sentToUnion     Boolean @default(false)
+  sentAt          DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@map("membership_documents")
 }
 
 // Новости
@@ -546,6 +549,18 @@ enum DocumentStatus {
   PENDING_APPROVAL
   APPROVED
   REJECTED
+}
+
+enum MembershipDocumentType {
+  MEMBERSHIP_APPLICATION    // Заявление на вступление в профсоюз
+  CONSENT_PERSONAL_DATA     // Согласие на обработку персональных данных
+  PAYMENT_DEDUCTION         // Заявление на удержание взносов
+}
+
+enum DocumentSignatureStatus {
+  NOT_SIGNED    // Не подписано
+  SIGNED        // Подписано
+  REJECTED      // Отклонено
 }
 
 enum ProjectStatus {
