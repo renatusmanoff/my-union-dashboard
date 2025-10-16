@@ -144,8 +144,8 @@ export default function RegisterPage() {
         const applicationData = await applicationResponse.json();
 
         if (applicationData.success) {
-          alert('Регистрация успешна! Заявление отправлено на рассмотрение.');
-          router.push('/login');
+          // Перенаправляем на 3-й этап регистрации
+          router.push(applicationData.redirectUrl || `/register/documents?id=${applicationData.application.id}`);
         } else {
           setError(applicationData.error || 'Ошибка при создании заявления');
         }

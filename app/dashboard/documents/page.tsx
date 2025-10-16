@@ -43,7 +43,7 @@ export default function DocumentsPage() {
   const fetchDocuments = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/membership/documents');
+      const response = await fetch('/api/documents');
       if (response.ok) {
         const data = await response.json();
         setDocuments(data.documents || []);

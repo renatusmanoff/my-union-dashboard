@@ -14,6 +14,11 @@ const publicApiRoutes = [
   '/api/organizations/search-inn'
 ];
 
+// Публичные API маршруты с параметрами (не требуют авторизации)
+const publicApiRoutesWithParams = [
+  '/api/membership/application/'
+];
+
 // Маршруты, которые доступны только неавторизованным пользователям
 const publicOnlyRoutes = [
   '/login',
@@ -55,8 +60,13 @@ export async function middleware(request: NextRequest) {
     pathname === route
   );
   
+  // Проверяем, является ли маршрут публичным API с параметрами
+  const isPublicApiRouteWithParams = publicApiRoutesWithParams.some(route => 
+    pathname.startsWith(route)
+  );
+  
   // Если это публичный API маршрут, пропускаем без проверки авторизации
-  if (isPublicApiRoute) {
+  if (isPublicApiRoute || isPublicApiRouteWithParams) {
     return NextResponse.next();
   }
   

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@/contexts/UserContext';
+import DashboardLayout from '@/components/DashboardLayout';
 
 interface Document {
   id: string;
@@ -164,15 +165,18 @@ export default function MemberDocumentsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
-      </div>
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+        </div>
+      </DashboardLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+      <DashboardLayout>
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
         <div className="flex">
           <div className="flex-shrink-0">
             <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -184,11 +188,13 @@ export default function MemberDocumentsPage() {
           </div>
         </div>
       </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <DashboardLayout>
+      <div className="space-y-6">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
@@ -307,7 +313,6 @@ export default function MemberDocumentsPage() {
             ))}
           </div>
         )}
-      </div>
-    </div>
+    </DashboardLayout>
   );
 }

@@ -25,6 +25,8 @@ model User {
   emailVerified   Boolean  @default(false)
   membershipValidated Boolean @default(false)
   lastLoginAt     DateTime?
+  resetToken      String?
+  resetTokenExpiry DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

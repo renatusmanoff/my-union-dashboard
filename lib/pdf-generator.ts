@@ -1,15 +1,43 @@
-import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
 import { MembershipApplication, Organization, User } from '@prisma/client';
+
+// Динамический импорт puppeteer в зависимости от окружения
+let puppeteer: any;
+let chromium: any;
+
+if (process.env.NODE_ENV === 'production') {
+  puppeteer = require('puppeteer-core');
+  chromium = require('@sparticuz/chromium');
+} else {
+  puppeteer = require('puppeteer');
+}
 
 export async function generateApplicationPDF(application: unknown): Promise<string> {
   try {
-    const browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: { width: 1920, height: 1080 },
-      executablePath: await chromium.executablePath(),
+    // Определяем конфигурацию для Puppeteer в зависимости от окружения
+    const launchOptions: any = {
       headless: true,
-    });
+      defaultViewport: { width: 1920, height: 1080 },
+    };
+
+    // Для продакшена (Vercel) используем chromium
+    if (process.env.NODE_ENV === 'production') {
+      launchOptions.args = chromium.args;
+      launchOptions.executablePath = await chromium.executablePath();
+    } else {
+      // Для локальной разработки используем системный Chrome
+      launchOptions.args = [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu'
+      ];
+    }
+
+    const browser = await puppeteer.launch(launchOptions);
     
     const page = await browser.newPage();
     
@@ -405,17 +433,37 @@ interface GeneratedDocument {
   filePath: string;
 }
 
+
 // Генерация трех документов для заявления на вступление в профсоюз
 export async function generateMembershipDocuments(data: MembershipDocumentData): Promise<GeneratedDocument[]> {
   const { application, organization, chairman } = data;
   
   try {
-    const browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: { width: 1920, height: 1080 },
-      executablePath: await chromium.executablePath(),
+    // Определяем конфигурацию для Puppeteer в зависимости от окружения
+    const launchOptions: any = {
       headless: true,
-    });
+      defaultViewport: { width: 1920, height: 1080 },
+    };
+
+    // Для продакшена (Vercel) используем chromium
+    if (process.env.NODE_ENV === 'production') {
+      launchOptions.args = chromium.args;
+      launchOptions.executablePath = await chromium.executablePath();
+    } else {
+      // Для локальной разработки используем системный Chrome
+      launchOptions.args = [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu'
+      ];
+    }
+
+    const browser = await puppeteer.launch(launchOptions);
     
     const documents: GeneratedDocument[] = [];
     

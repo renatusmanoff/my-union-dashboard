@@ -84,8 +84,8 @@ export async function POST(request: NextRequest) {
             type: doc.type,
             fileName: doc.fileName,
             filePath: doc.filePath,
-            status: signLater ? 'NOT_SIGNED' : 'SIGNED',
-            signedAt: signLater ? null : new Date()
+            status: 'NOT_SIGNED',
+            signedAt: null
           }
         })
       )
@@ -97,9 +97,8 @@ export async function POST(request: NextRequest) {
         ...application,
         documents: savedDocuments
       },
-      message: signLater 
-        ? "Заявление создано. Документы можно подписать позже в личном кабинете."
-        : "Заявление успешно подано с подписанными документами."
+      redirectUrl: `/register/documents?id=${application.id}`,
+      message: "Заявление создано! Теперь вы можете скачать и подписать документы."
     });
 
   } catch (error) {

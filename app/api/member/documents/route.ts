@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { prisma } from "@/lib/database";
 
 export async function GET() {
   try {
@@ -11,12 +12,33 @@ export async function GET() {
       );
     }
 
-    // TODO: Реализовать функционал
-    const data: unknown[] = [];
+    // Получаем заявления пользователя с документами
+    const applications = await prisma.membershipApplication.findMany({
+      where: {
+        userId: currentUser.id
+      },
+      include: {
+        documents: {
+          orderBy: {
+            createdAt: 'desc'
+          }
+        },
+        organization: {
+          select: {
+            id: true,
+            name: true,
+            type: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
 
     return NextResponse.json({
       success: true,
-      data
+      applications
     });
 
   } catch (error) {
