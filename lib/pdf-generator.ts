@@ -409,7 +409,16 @@ export async function generateMembershipDocuments(data: MembershipDocumentData):
   try {
     const browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu'
+      ]
     });
     
     const documents: GeneratedDocument[] = [];
@@ -456,7 +465,11 @@ export async function generateMembershipDocuments(data: MembershipDocumentData):
     
   } catch (error) {
     console.error('Error generating membership documents:', error);
-    throw new Error('Не удалось сгенерировать документы');
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace'
+    });
+    throw new Error(`Не удалось сгенерировать документы: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 

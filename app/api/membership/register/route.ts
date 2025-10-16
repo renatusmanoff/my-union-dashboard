@@ -68,28 +68,10 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Генерируем PDF документы
-    const documents = await generateMembershipDocuments({
-      application,
-      organization,
-      chairman
-    });
-
-    // Сохраняем документы в БД
-    const savedDocuments = await Promise.all(
-      documents.map(doc => 
-        prisma.membershipDocument.create({
-          data: {
-            applicationId: application.id,
-            type: doc.type,
-            fileName: doc.fileName,
-            filePath: doc.filePath,
-            status: signLater ? 'NOT_SIGNED' : 'SIGNED',
-            signedAt: signLater ? null : new Date()
-          }
-        })
-      )
-    );
+    // Временно отключаем генерацию PDF для продакшена
+    // TODO: Настроить Puppeteer для Vercel
+    const documents: any[] = [];
+    const savedDocuments: any[] = [];
 
     return NextResponse.json({
       success: true,
@@ -97,9 +79,7 @@ export async function POST(request: NextRequest) {
         ...application,
         documents: savedDocuments
       },
-      message: signLater 
-        ? "Заявление создано. Документы можно подписать позже в личном кабинете."
-        : "Заявление успешно подано с подписанными документами."
+      message: "Заявление успешно подано. PDF документы будут сгенерированы позже."
     });
 
   } catch (error) {
