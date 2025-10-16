@@ -492,18 +492,13 @@ async function generatePDFFromHTMLWithBrowser(browser: any, html: string): Promi
 
 // Вспомогательная функция для сохранения PDF
 async function savePDF(pdfBuffer: Buffer, fileName: string): Promise<string> {
-  const fs = await import('fs');
-  const path = await import('path');
+  // На Vercel используем временный URL для PDF
+  // В реальном проекте можно использовать S3 или другой cloud storage
+  const base64 = pdfBuffer.toString('base64');
+  const dataUrl = `data:application/pdf;base64,${base64}`;
   
-  const documentsDir = path.join(process.cwd(), 'public', 'documents');
-  if (!fs.existsSync(documentsDir)) {
-    fs.mkdirSync(documentsDir, { recursive: true });
-  }
-  
-  const filePath = path.join(documentsDir, fileName);
-  fs.writeFileSync(filePath, pdfBuffer);
-  
-  return `/documents/${fileName}`;
+  // Возвращаем временный URL
+  return dataUrl;
 }
 
 // Генерация HTML для заявления на вступление в профсоюз

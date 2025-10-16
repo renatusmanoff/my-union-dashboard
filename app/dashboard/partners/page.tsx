@@ -1,3 +1,5 @@
+'use client';
+
 import DashboardLayout from '@/components/DashboardLayout';
 import Image from 'next/image';
 import { Partner } from '@/types';

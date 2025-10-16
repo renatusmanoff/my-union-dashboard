@@ -1,3 +1,5 @@
+'use client';
+
 import DashboardLayout from '@/components/DashboardLayout';
 import { NewsItem } from '@/types';
 
