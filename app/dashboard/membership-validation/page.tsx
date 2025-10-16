@@ -177,7 +177,7 @@ export default function MembershipValidationPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y" style={{ borderColor: 'var(--card-border)' }}>
-                    {applications.map((application) => (
+                    {applications?.map((application) => (
                       <tr key={application.id}>
                         <td className="px-6 py-4">
                           <div>
