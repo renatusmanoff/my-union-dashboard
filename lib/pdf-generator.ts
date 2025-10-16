@@ -461,6 +461,7 @@ export async function generateMembershipDocuments(data: MembershipDocumentData):
 }
 
 // Вспомогательная функция для генерации PDF из HTML
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function generatePDFFromHTMLWithBrowser(browser: any, html: string): Promise<Buffer> {
   const page = await browser.newPage();
   await page.setContent(html, { waitUntil: 'networkidle0' });

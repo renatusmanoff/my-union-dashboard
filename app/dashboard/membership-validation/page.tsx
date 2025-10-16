@@ -222,7 +222,7 @@ export default function MembershipValidationPage() {
                         <td className="px-6 py-4">
                           <div className="flex flex-wrap gap-1">
                             {application.documents && application.documents.length > 0 ? (
-                              application.documents.map((doc: any, index: number) => (
+                              application.documents.map((doc: { id: string; type: string; status: string }, index: number) => (
                                 <span
                                   key={doc.id || index}
                                   className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
@@ -350,7 +350,7 @@ export default function MembershipValidationPage() {
                               )}
                             </>
                           );
-                        } catch (error) {
+                        } catch {
                           return <p>Адрес не указан</p>;
                         }
                       })()}
@@ -394,7 +394,7 @@ export default function MembershipValidationPage() {
                   <div className="mt-6">
                     <h4 className="font-medium mb-3">Документы заявления</h4>
                     <div className="space-y-3">
-                      {selectedApplication.documents.map((doc: any) => (
+                      {selectedApplication.documents.map((doc: { id: string; type: string; fileName: string; filePath: string; status: string }) => (
                         <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                           <div className="flex items-center space-x-3">
                             <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

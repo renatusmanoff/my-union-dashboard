@@ -19,7 +19,7 @@ async function searchByDaData(inn: string): Promise<OrganizationData | null> {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Token ${process.env.DADATA_API_KEY}`,
-        'X-Secret': process.env.DADATA_SECRET_KEY
+        'X-Secret': process.env.DADATA_SECRET_KEY || ''
       },
       body: JSON.stringify({
         query: inn
@@ -113,7 +113,7 @@ async function searchByDaData(inn: string): Promise<OrganizationData | null> {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Token ${process.env.DADATA_API_KEY}`,
-        'X-Secret': process.env.DADATA_SECRET_KEY
+        'X-Secret': process.env.DADATA_SECRET_KEY || ''
       },
       body: JSON.stringify({
         query: inn

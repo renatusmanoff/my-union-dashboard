@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useUser } from '@/lib/auth';
+import { useUser } from '@/contexts/UserContext';
 
 interface Document {
   id: string;
@@ -30,7 +30,7 @@ interface Application {
 }
 
 export default function MemberDocumentsPage() {
-  const { user } = useUser();
+  const { user: _user } = useUser();
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
