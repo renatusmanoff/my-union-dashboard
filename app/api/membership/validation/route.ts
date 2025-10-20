@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Получаем заявления в зависимости от роли
-    let whereClause: any = {};
+    const whereClause: Record<string, unknown> = {};
 
     if (currentUser.role === 'PRIMARY_CHAIRMAN') {
       // Первичный председатель видит только заявления своей организации

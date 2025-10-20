@@ -68,24 +68,18 @@ export default function DocumentsPage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  // Проверка доступа
-  if (!isLoading && user && !['FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN', 'SUPER_ADMIN'].includes(user.role)) {
-    router.push('/dashboard');
-    return null;
-  }
-
   // Загружаем документы
   useEffect(() => {
     async function loadDocuments() {
       try {
-      const response = await fetch('/api/documents');
-      if (response.ok) {
-        const data = await response.json();
-        setDocuments(data.documents || []);
-      }
-    } catch (error) {
+        const response = await fetch('/api/documents');
+        if (response.ok) {
+          const data = await response.json();
+          setDocuments(data.documents || []);
+        }
+      } catch (error) {
         console.error('Error loading documents:', error);
-    } finally {
+      } finally {
         setLoadingDocs(false);
       }
     }
@@ -126,6 +120,12 @@ export default function DocumentsPage() {
       setFilteredMembers([]);
     }
   }, [searchMember, members]);
+
+  // Проверка доступа
+  if (!isLoading && user && !['FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN', 'SUPER_ADMIN'].includes(user.role)) {
+    router.push('/dashboard');
+    return null;
+  }
 
   const handleAddParticipant = (participantId: string) => {
     if (!selectedParticipants.includes(participantId)) {
