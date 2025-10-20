@@ -3,10 +3,11 @@ import { fileStorage } from '../../upload/route';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const fileId = params.id;
+    const { id } = await params;
+    const fileId = id;
 
     // Получаем файл из памяти
     const file = fileStorage.get(fileId);
