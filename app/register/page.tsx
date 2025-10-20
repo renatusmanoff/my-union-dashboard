@@ -27,7 +27,7 @@ export default function RegisterPage() {
     firstName: '',
     lastName: '',
     middleName: '',
-    dateOfBirth: new Date(),
+    dateOfBirth: undefined,
     gender: 'MALE',
     education: '',
     specialties: [],
@@ -46,6 +46,16 @@ export default function RegisterPage() {
     children: [],
     hobbies: []
   });
+  // Безопасное значение для инпута даты рождения
+  const dateOfBirthInputValue = (() => {
+    const value = newMemberData.dateOfBirth as unknown;
+    if (!value) return '';
+    if (typeof value === 'string') return value;
+    if (value instanceof Date && !isNaN(value.getTime())) {
+      return value.toISOString().split('T')[0];
+    }
+    return '';
+  })();
 
   // Данные для поиска существующего члена
   const [searchData, setSearchData] = useState({
@@ -129,7 +139,7 @@ export default function RegisterPage() {
 
       if (registerData.success) {
         // Затем создаем заявление на вступление
-        const applicationResponse = await fetch('/api/membership/application', {
+        const applicationResponse = await fetch('/api/membership/register', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -137,7 +147,7 @@ export default function RegisterPage() {
           body: JSON.stringify({
             ...newMemberData,
             organizationId: searchData.organizationId,
-            applicationDate: new Date().toISOString()
+            userId: registerData.user.id
           }),
         });
 
@@ -242,13 +252,13 @@ export default function RegisterPage() {
   };
 
   if (step === 1) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8">
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
           <div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
               Регистрация в системе
-            </h2>
+          </h2>
             <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
               Создайте аккаунт для доступа к профсоюзной платформе
             </p>
@@ -432,19 +442,19 @@ export default function RegisterPage() {
                     onChange={(e) => setNewMemberData({ ...newMemberData, middleName: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
-                </div>
-                <div>
+              </div>
+              <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Дата рождения *
-                  </label>
-                  <input
+                </label>
+                <input
                     type="date"
                     required
-                    value={newMemberData.dateOfBirth ? new Date(newMemberData.dateOfBirth).toISOString().split('T')[0] : ''}
-                    onChange={(e) => setNewMemberData({ ...newMemberData, dateOfBirth: new Date(e.target.value) })}
+                    value={dateOfBirthInputValue}
+                    onChange={(e) => setNewMemberData({ ...newMemberData, dateOfBirth: e.target.value ? new Date(e.target.value) : undefined })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  />
-                </div>
+                />
+              </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Пол *
@@ -459,13 +469,13 @@ export default function RegisterPage() {
                     <option value="FEMALE">Женский</option>
                   </select>
                 </div>
-                <div>
+              <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Телефон *
-                  </label>
-                  <input
-                    type="tel"
-                    required
+                </label>
+                <input
+                  type="tel"
+                  required
                     value={newMemberData.phone || ''}
                     onChange={(e) => setNewMemberData({ ...newMemberData, phone: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
@@ -494,7 +504,7 @@ export default function RegisterPage() {
                     </option>
                   ))}
                 </select>
-              </div>
+            </div>
 
               {/* Адрес */}
               <div className="mb-6">
@@ -570,16 +580,16 @@ export default function RegisterPage() {
 
               {error && (
                 <div className="text-red-600 text-sm text-center mb-4">{error}</div>
-              )}
+            )}
 
-              <div className="flex space-x-4">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
+            <div className="flex space-x-4">
+              <button
+                type="button"
+                onClick={() => setStep(1)}
                   className="flex-1 py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-                >
-                  Назад
-                </button>
+              >
+                Назад
+              </button>
                 <button
                   type="submit"
                   disabled={isLoading}
@@ -661,14 +671,14 @@ export default function RegisterPage() {
                 >
                   Назад
                 </button>
-                <button
-                  type="submit"
-                  disabled={isLoading}
+              <button
+                type="submit"
+                disabled={isLoading}
                   className="flex-1 py-2 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                 >
                   {isLoading ? 'Поиск...' : 'Найти и зарегистрироваться'}
                 </button>
-              </div>
+                  </div>
             </div>
           </form>
         )}

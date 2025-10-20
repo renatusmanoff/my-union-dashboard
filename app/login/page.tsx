@@ -1,11 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [redirectTo, setRedirectTo] = useState('/dashboard');
+  
+  useEffect(() => {
+    const redirect = searchParams.get('redirect');
+    if (redirect) {
+      setRedirectTo(redirect);
+    }
+  }, [searchParams]);
+
   const [formData, setFormData] = useState({
     email: process.env.NODE_ENV === 'development' ? 'admin@myunion.pro' : '',
     password: process.env.NODE_ENV === 'development' ? 'admin123!' : ''
@@ -30,8 +40,8 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        // Успешная аутентификация
-        router.push('/dashboard');
+        // Успешная аутентификация - перенаправляем на исходную страницу или дашборд
+        router.push(redirectTo);
       } else {
         setError(data.error || 'Произошла ошибка при входе');
       }

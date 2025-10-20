@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database';
 import { generateMembershipDocuments } from '@/lib/pdf-generator';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,6 +26,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Пытаемся получить текущего пользователя (может быть null для публичной регистрации)
+    const currentUser = await getCurrentUser();
 
     // Получаем организацию
     const organization = await prisma.organization.findUnique({
@@ -53,7 +57,7 @@ export async function POST(request: NextRequest) {
       data: {
         firstName,
         lastName,
-        middleName: middleName || '',
+        middleName: middleName || undefined,
         gender,
         dateOfBirth: new Date(dateOfBirth),
         phone,
@@ -61,7 +65,7 @@ export async function POST(request: NextRequest) {
         organizationId,
         status: 'PENDING',
         signLater,
-        userId
+        userId: currentUser?.id || userId
       },
       include: {
         organization: true
@@ -70,7 +74,10 @@ export async function POST(request: NextRequest) {
 
     // Генерируем PDF документы
     const documents = await generateMembershipDocuments({
-      application,
+      application: {
+        ...application,
+        middleName: application.middleName || undefined
+      },
       organization,
       chairman
     });
@@ -97,7 +104,7 @@ export async function POST(request: NextRequest) {
         ...application,
         documents: savedDocuments
       },
-      redirectUrl: `/register/documents?id=${application.id}`,
+      redirectUrl: currentUser ? `/dashboard/member-documents` : `/register/documents?id=${application.id}`,
       message: "Заявление создано! Теперь вы можете скачать и подписать документы."
     });
 

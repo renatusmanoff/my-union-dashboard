@@ -1,0 +1,42 @@
+const nodemailer = require('nodemailer');
+
+const smtpConfig = {
+  host: 'smtp.mail.ru',
+  port: 465,
+  secure: true,
+  auth: {
+    user: 'support@myunion.pro',
+    pass: '8uld1thwBBN1XVNbmW9p'
+  }
+};
+
+console.log('📋 Конфигурация:');
+console.log('   Host:', smtpConfig.host);
+console.log('   Port:', smtpConfig.port);
+console.log('   User:', smtpConfig.auth.user);
+console.log('');
+
+const transporter = nodemailer.createTransport(smtpConfig);
+
+(async () => {
+  try {
+    console.log('🔄 Проверяем подключение к SMTP...');
+    await transporter.verify();
+    console.log('✅ SMTP подключение успешно!');
+    
+    console.log('\n📧 Отправляем тестовое письмо на 9061109990@mail.ru...');
+    const info = await transporter.sendMail({
+      from: '"My Union" <support@myunion.pro>',
+      to: '9061109990@mail.ru',
+      subject: 'Тест - Учетные данные MyUnion',
+      html: '<h1>Привет!</h1><p>Это тестовое письмо от системы MyUnion</p><p>Временный пароль: <strong>t3VjCW7NgNmg</strong></p>'
+    });
+    
+    console.log('✅ Письмо отправлено!');
+    console.log('   Message ID:', info.messageId);
+    console.log('\n🎉 SMTP работает правильно!');
+    
+  } catch (error) {
+    console.error('\n❌ Ошибка:', error.message);
+  }
+})();

@@ -52,7 +52,7 @@ model User {
   createdProjects Project[]
   
   // Заявления на вступление в профсоюз
-  membershipApplications MembershipApplication[]
+  membershipApplications MembershipApplication[] @relation("UserMembershipApplications")
   
   // Созданные события календаря
   createdEvents   CalendarEvent[]
@@ -62,6 +62,15 @@ model User {
   
   // Созданные отчеты
   createdReports  Report[]
+  
+  // Документооборот
+  createdWorkflowDocuments WorkflowDocument[] @relation("WorkflowDocumentCreator")
+  documentSignatures DocumentSignature[]
+  documentParticipants DocumentParticipant[]
+  
+  // Уведомления
+  sentNotifications Notification[] @relation("NotificationSender")
+  receivedNotifications Notification[] @relation("NotificationRecipient")
 
   @@map("users")
 }
@@ -98,6 +107,7 @@ model Organization {
   knowledge     KnowledgeBaseItem[]
   employees     Employee[]
   members       UnionMember[]
+  workflowDocuments WorkflowDocument[]
   reports       Report[]
 
   @@map("organizations")
@@ -120,6 +130,7 @@ model MembershipApplication {
   organizationId  String
   organization    Organization @relation(fields: [organizationId], references: [id])
   status          ApplicationStatus @default(PENDING)
+  feesStatus      FeesStatus @default(NOT_PAID)
   signLater       Boolean @default(false)
   reviewedBy      String?
   reviewedAt      DateTime?
@@ -127,10 +138,11 @@ model MembershipApplication {
   
   // Связь с пользователем (может быть null для незарегистрированных)
   userId          String?
-  user            User? @relation(fields: [userId], references: [id])
+  user            User? @relation("UserMembershipApplications", fields: [userId], references: [id], onDelete: Cascade)
   
   // Документы заявления
   documents       MembershipDocument[]
+  notifications   Notification[]
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -271,7 +283,7 @@ model CalendarEvent {
   startDate       DateTime
   endDate         DateTime
   type            EventType
-  attendees       String[]    // Массив ID пользователей
+  attendees       String    // JSON строка с массивом ID пользователей
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -290,7 +302,7 @@ model KnowledgeBaseItem {
   title           String
   content         String
   category        String
-  tags            String[] // Массив тегов
+  tags            String // JSON строка с массивом тегов
   views           Int      @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -528,6 +540,11 @@ enum ApplicationStatus {
   REJECTED
 }
 
+enum FeesStatus {
+  NOT_PAID
+  PAID
+}
+
 enum Gender {
   MALE
   FEMALE
@@ -590,4 +607,127 @@ enum ReportType {
   MEMBERSHIP
   ACTIVITY
   STATISTICAL
+}
+
+// Документооборот
+model WorkflowDocument {
+  id          String   @id @default(cuid())
+  title       String
+  type        WorkflowDocumentType
+  content     String?  // HTML content for PDF generation
+  pdfPath     String?  // Path to generated PDF
+  status      WorkflowDocumentStatus @default(DRAFT)
+  uploadedFilePath String? // Path to the uploaded document file
+  
+  // Основные данные документа
+  meetingDate DateTime?  // Дата заседания
+  meetingLocation String?  // Место проведения
+  documentDate DateTime?  // Дата документа (по умолчанию текущий день)
+  
+  // Структурированные данные (JSON)
+  questionsList String?  // JSON массив вопросов с докладчиками для Повестки
+  decisions String?      // JSON массив решений для Протокола
+  votingData String?     // JSON данные голосования
+  extractedDecisions String?  // JSON выбранные решения для Выписки
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Связи
+  creatorId   String
+  creator     User @relation("WorkflowDocumentCreator", fields: [creatorId], references: [id])
+  organizationId String?
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  
+  // Участники документа
+  participants DocumentParticipant[]
+  signatures   DocumentSignature[]
+  notifications Notification[]
+
+  @@map("workflow_documents")
+}
+
+model DocumentParticipant {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User @relation(fields: [userId], references: [id])
+  documentId String
+  document  WorkflowDocument @relation(fields: [documentId], references: [id])
+  status    DocumentParticipantStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, documentId])
+  @@map("document_participants")
+}
+
+model DocumentSignature {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User @relation(fields: [userId], references: [id])
+  documentId String
+  document  WorkflowDocument @relation(fields: [documentId], references: [id])
+  signature String?  // Base64 signature or file path
+  signedAt  DateTime?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, documentId])
+  @@map("document_signatures")
+}
+
+// Уведомления
+model Notification {
+  id        String   @id @default(cuid())
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // Связи
+  senderId   String?
+  sender     User? @relation("NotificationSender", fields: [senderId], references: [id])
+  recipientId String
+  recipient  User @relation("NotificationRecipient", fields: [recipientId], references: [id])
+  
+  // Связанные объекты
+  workflowDocumentId String?
+  workflowDocument   WorkflowDocument? @relation(fields: [workflowDocumentId], references: [id])
+  membershipApplicationId String?
+  membershipApplication MembershipApplication? @relation(fields: [membershipApplicationId], references: [id])
+
+  @@map("notifications")
+}
+
+// Enums для документооборота
+enum WorkflowDocumentType {
+  PROTOCOL_MEETING    // Протокол заседания
+  AGENDA              // Повестка дня
+  EXTRACT_FROM_PROTOCOL // Выписка из протокола
+  RESOLUTION          // Постановление
+}
+
+enum WorkflowDocumentStatus {
+  DRAFT               // Черновик
+  PENDING_APPROVAL    // На согласовании
+  APPROVED           // Одобрен
+  REJECTED           // Отклонен
+  COMPLETED          // Завершен
+}
+
+enum DocumentParticipantStatus {
+  PENDING            // На подписании
+  APPROVED           // На согласовании
+  SIGNED             // Подписал
+  REJECTED           // Отклонил
+}
+
+enum NotificationType {
+  NEW_MEMBER_REGISTRATION  // Новый член зарегистрировался
+  MEMBERSHIP_APPROVED      // Членство одобрено
+  MEMBERSHIP_REJECTED      // Членство отклонено
+  DOCUMENT_CREATED         // Создан новый документ
+  DOCUMENT_SIGNED          // Документ подписан
+  DOCUMENT_REJECTED        // Документ отклонен
+  DOCUMENT_APPROVED        // Документ одобрен
 }

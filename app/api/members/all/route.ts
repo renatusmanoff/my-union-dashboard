@@ -20,10 +20,16 @@ export async function GET() {
       );
     }
 
-    // Получаем всех пользователей с ролью PRIMARY_MEMBER и их заявления
+    // Получаем только тех пользователей с ролью PRIMARY_MEMBER, 
+    // у которых есть одобренное заявление на вступление в профсоюз
     const members = await prisma.user.findMany({
       where: {
-        role: 'PRIMARY_MEMBER'
+        role: 'PRIMARY_MEMBER',
+        membershipApplications: {
+          some: {
+            status: 'APPROVED'
+          }
+        }
       },
       include: {
         organization: {

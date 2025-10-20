@@ -35,6 +35,7 @@ export default function MemberDocumentsPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [uploadingDocument, setUploadingDocument] = useState<string | null>(null);
 
   const fetchApplications = useCallback(async () => {
     try {
@@ -143,6 +144,40 @@ export default function MemberDocumentsPage() {
     }
   };
 
+  const handleUploadSignedDocument = async (documentId: string, file: File) => {
+    try {
+      setUploadingDocument(documentId);
+      setError('');
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`/api/membership/documents/${documentId}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка при загрузке документа');
+      }
+
+      // Обновляем список заявлений
+      await fetchApplications();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Произошла ошибка при загрузке');
+    } finally {
+      setUploadingDocument(null);
+    }
+  };
+
+  const handleFileInputChange = (documentId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      handleUploadSignedDocument(documentId, file);
+    }
+  };
+
   const handleSendToUnion = async (documentId: string) => {
     try {
       const response = await fetch(`/api/membership/documents/${documentId}/send`, {
@@ -195,20 +230,40 @@ export default function MemberDocumentsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Мои документы
-          </h1>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            Управление документами заявлений на вступление в профсоюз
-          </p>
+        {/* Header */}
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Мои документы
+            </h1>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+              Управление документами заявлений на вступление в профсоюз
+            </p>
+          </div>
+          <div className="px-6 py-4 bg-blue-900/20 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-start">
+              <svg className="h-5 w-5 text-blue-400 mt-0.5 mr-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h3 className="text-sm font-medium text-blue-200">
+                  Инструкция по подписанию документов
+                </h3>
+                <div className="mt-2 text-sm text-blue-300">
+                  <p className="mb-2">Для подписания документов у вас есть два варианта:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li><strong>Загрузить подпись:</strong> Скачайте документ, подпишите его от руки, отсканируйте или сфотографируйте, затем загрузите обратно</li>
+                    <li><strong>Подписать онлайн:</strong> Подпись будет отправлена председателю организации по email для рассмотрения</li>
+                  </ul>
+                  <p className="mt-2">После подписания нажмите "Отправить в профсоюз" для передачи документов на рассмотрение.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Applications List */}
-      <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
+        {/* Applications List */}
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-medium text-gray-900 dark:text-white">
             Заявления на вступление в профсоюз
@@ -275,21 +330,48 @@ export default function MemberDocumentsPage() {
                           {getStatusLabel(document.status)}
                         </span>
                         <div className="flex space-x-2">
-                          <a
-                            href={document.filePath}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            onClick={() => {
+                              const downloadUrl = `/api/membership/document/${document.id}/download`;
+                              const link = window.document.createElement('a');
+                              link.href = downloadUrl;
+                              link.download = document.fileName;
+                              window.document.body.appendChild(link);
+                              link.click();
+                              window.document.body.removeChild(link);
+                            }}
                             className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
                           >
                             Скачать
-                          </a>
+                          </button>
+                          <button
+                            onClick={() => {
+                              const viewUrl = `/api/membership/document/${document.id}/download`;
+                              window.open(viewUrl, '_blank');
+                            }}
+                            className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          >
+                            Просмотр
+                          </button>
                           {document.status === 'NOT_SIGNED' && (
-                            <button
-                              onClick={() => handleSignDocument(document.id)}
-                              className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-primary-600 hover:bg-primary-700"
-                            >
-                              Подписать
-                            </button>
+                            <>
+                              <label className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 shadow-sm text-xs font-medium rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                                <input
+                                  type="file"
+                                  accept=".pdf,.jpg,.jpeg,.png"
+                                  onChange={(e) => handleFileInputChange(document.id, e)}
+                                  className="hidden"
+                                  disabled={uploadingDocument === document.id}
+                                />
+                                {uploadingDocument === document.id ? 'Загрузка...' : 'Загрузить подпись'}
+                              </label>
+                              <button
+                                onClick={() => handleSignDocument(document.id)}
+                                className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded text-white bg-primary-600 hover:bg-primary-700"
+                              >
+                                Подписать онлайн
+                              </button>
+                            </>
                           )}
                           {document.status === 'SIGNED' && !document.sentToUnion && (
                             <button
@@ -313,6 +395,8 @@ export default function MemberDocumentsPage() {
             ))}
           </div>
         )}
+        </div>
+      </div>
     </DashboardLayout>
   );
 }

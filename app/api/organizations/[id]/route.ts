@@ -97,19 +97,25 @@ export async function PUT(
     }
 
     // Обновляем организацию
+    const updateData: any = {
+      name: name || existingOrganization.name,
+      type: type || existingOrganization.type,
+      address: address || existingOrganization.address,
+      phone: phone || existingOrganization.phone,
+      email: email || existingOrganization.email,
+      chairmanName: chairmanName !== undefined ? chairmanName : existingOrganization.chairmanName,
+      isActive: isActive !== undefined ? isActive : existingOrganization.isActive,
+      industry: industry || existingOrganization.industry
+    };
+
+    // Только добавляем parentId если он явно передан
+    if (parentId !== undefined) {
+      updateData.parentId = parentId || null;
+    }
+
     const updatedOrganization = await prisma.organization.update({
       where: { id },
-      data: {
-        name: name || existingOrganization.name,
-        type: type || existingOrganization.type,
-        parentId: parentId !== undefined ? parentId : existingOrganization.parentId,
-        address: address || existingOrganization.address,
-        phone: phone || existingOrganization.phone,
-        email: email || existingOrganization.email,
-        chairmanName: chairmanName !== undefined ? chairmanName : existingOrganization.chairmanName,
-        isActive: isActive !== undefined ? isActive : existingOrganization.isActive,
-        industry: industry || existingOrganization.industry
-      },
+      data: updateData,
       include: {
         users: {
           where: {

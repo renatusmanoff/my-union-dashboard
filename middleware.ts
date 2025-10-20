@@ -16,7 +16,8 @@ const publicApiRoutes = [
 
 // Публичные API маршруты с параметрами (не требуют авторизации)
 const publicApiRoutesWithParams = [
-  '/api/membership/application/'
+  '/api/membership/application/', // Allows access to /api/membership/application/[id]
+  '/api/membership/document/' // Allows access to /api/membership/document/[id]/download
 ];
 
 // Маршруты, которые доступны только неавторизованным пользователям

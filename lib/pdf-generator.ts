@@ -1,19 +1,25 @@
-import { MembershipApplication, Organization, User } from '@prisma/client';
+import { Organization, User } from '@prisma/client';
 
 // Динамический импорт puppeteer в зависимости от окружения
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let puppeteer: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let chromium: any;
 
 if (process.env.NODE_ENV === 'production') {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   puppeteer = require('puppeteer-core');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   chromium = require('@sparticuz/chromium');
 } else {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   puppeteer = require('puppeteer');
 }
 
 export async function generateApplicationPDF(application: unknown): Promise<string> {
   try {
     // Определяем конфигурацию для Puppeteer в зависимости от окружения
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const launchOptions: any = {
       headless: true,
       defaultViewport: { width: 1920, height: 1080 },
@@ -421,7 +427,16 @@ export async function generatePDFFromHTML(html: string, fileName: string): Promi
 
 // Интерфейс для данных генерации документов
 interface MembershipDocumentData {
-  application: MembershipApplication;
+  application: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    middleName?: string;
+    dateOfBirth: Date;
+    phone: string;
+    address: string;
+    organizationId: string;
+  };
   organization: Organization & { chairman?: User | null };
   chairman?: User | null;
 }
@@ -440,6 +455,7 @@ export async function generateMembershipDocuments(data: MembershipDocumentData):
   
   try {
     // Определяем конфигурацию для Puppeteer в зависимости от окружения
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const launchOptions: any = {
       headless: true,
       defaultViewport: { width: 1920, height: 1080 },
@@ -519,6 +535,7 @@ export async function generateMembershipDocuments(data: MembershipDocumentData):
 
 // Вспомогательная функция для генерации PDF из HTML
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function generatePDFFromHTMLWithBrowser(browser: any, html: string): Promise<Buffer> {
   const page = await browser.newPage();
   await page.setContent(html, { waitUntil: 'networkidle0' });
@@ -540,18 +557,26 @@ async function generatePDFFromHTMLWithBrowser(browser: any, html: string): Promi
 
 // Вспомогательная функция для сохранения PDF
 async function savePDF(pdfBuffer: Buffer, fileName: string): Promise<string> {
-  // На Vercel используем временный URL для PDF
-  // В реальном проекте можно использовать S3 или другой cloud storage
-  const base64 = pdfBuffer.toString('base64');
-  const dataUrl = `data:application/pdf;base64,${base64}`;
+  const fs = await import('fs');
+  const path = await import('path');
   
-  // Возвращаем временный URL
-  return dataUrl;
+  const filePath = path.join(process.cwd(), 'public', 'documents', fileName);
+  
+  // Создаем папку если её нет
+  const documentsDir = path.join(process.cwd(), 'public', 'documents');
+  if (!fs.existsSync(documentsDir)) {
+    fs.mkdirSync(documentsDir, { recursive: true });
+  }
+  
+  fs.writeFileSync(filePath, pdfBuffer);
+  
+  // Возвращаем URL для доступа к файлу
+  return `/documents/${fileName}`;
 }
 
 // Генерация HTML для заявления на вступление в профсоюз
-function generateMembershipApplicationHTML(application: MembershipApplication, organization: Organization, chairman?: User | null): string {
-  const chairmanName = chairman ? `${chairman.lastName} ${chairman.firstName} ${chairman.middleName || ''}`.trim() : organization.chairmanName || 'Председатель';
+function generateMembershipApplicationHTML(application: MembershipDocumentData['application'], organization: Organization, chairman?: User | null): string {
+  const chairmanName = chairman ? `${chairman.lastName} ${chairman.firstName} ${chairman.middleName || ''}`.trim() : 'Председатель';
   const applicantName = `${application.lastName} ${application.firstName} ${application.middleName || ''}`.trim();
   const currentDate = new Date().toLocaleDateString('ru-RU');
   
@@ -604,8 +629,8 @@ function generateMembershipApplicationHTML(application: MembershipApplication, o
 }
 
 // Генерация HTML для согласия на обработку персональных данных
-function generateConsentHTML(application: MembershipApplication, organization: Organization, chairman?: User | null): string {
-  const chairmanName = chairman ? `${chairman.lastName} ${chairman.firstName} ${chairman.middleName || ''}`.trim() : organization.chairmanName || 'Председатель';
+function generateConsentHTML(application: MembershipDocumentData['application'], organization: Organization, chairman?: User | null): string {
+  const chairmanName = chairman ? `${chairman.lastName} ${chairman.firstName} ${chairman.middleName || ''}`.trim() : 'Председатель';
   const applicantName = `${application.lastName} ${application.firstName} ${application.middleName || ''}`.trim();
   const currentDate = new Date().toLocaleDateString('ru-RU');
   
@@ -691,8 +716,8 @@ function generateConsentHTML(application: MembershipApplication, organization: O
 }
 
 // Генерация HTML для заявления на удержание взносов
-function generatePaymentDeductionHTML(application: MembershipApplication, organization: Organization, chairman?: User | null): string {
-  const chairmanName = chairman ? `${chairman.lastName} ${chairman.firstName} ${chairman.middleName || ''}`.trim() : organization.chairmanName || 'Председатель';
+function generatePaymentDeductionHTML(application: MembershipDocumentData['application'], organization: Organization, chairman?: User | null): string {
+  const chairmanName = chairman ? `${chairman.lastName} ${chairman.firstName} ${chairman.middleName || ''}`.trim() : 'Председатель';
   const applicantName = `${application.lastName} ${application.firstName} ${application.middleName || ''}`.trim();
   const currentDate = new Date().toLocaleDateString('ru-RU');
   
@@ -735,4 +760,373 @@ function generatePaymentDeductionHTML(application: MembershipApplication, organi
     </body>
     </html>
   `;
+}
+
+// Интерфейсы для документов документооборота
+interface WorkflowDocumentData {
+  document: {
+    id: string;
+    title: string;
+    type: string;
+    content?: string;
+    createdAt: string;
+  };
+  creator: {
+    firstName: string;
+    lastName: string;
+    middleName?: string;
+    position?: string;
+  };
+  organization: {
+    name: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+  };
+  participants?: Array<{
+    firstName: string;
+    lastName: string;
+    middleName?: string;
+    position?: string;
+  }>;
+}
+
+// Генерация HTML для протокола заседания
+function generateProtocolMeetingHTML(data: WorkflowDocumentData): string {
+  const currentDate = new Date().toLocaleDateString('ru-RU');
+  const participants = data.participants || [];
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Протокол заседания</title>
+      <style>
+        body { font-family: 'Times New Roman', serif; margin: 40px; line-height: 1.6; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .title { font-size: 16px; font-weight: bold; margin-bottom: 20px; }
+        .info { margin-bottom: 20px; }
+        .participants { margin-bottom: 20px; }
+        .participants table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .participants th, .participants td { border: 1px solid #000; padding: 8px; text-align: left; }
+        .participants th { background-color: #f0f0f0; }
+        .content { margin-bottom: 30px; }
+        .signatures { margin-top: 40px; }
+        .signature-line { margin-bottom: 20px; }
+        .signature-line span { display: inline-block; width: 200px; border-bottom: 1px solid #000; margin-right: 20px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="title">ПРОТОКОЛ ЗАСЕДАНИЯ</div>
+        <div>${data.organization.name}</div>
+      </div>
+      
+      <div class="info">
+        <p><strong>Дата проведения:</strong> ${currentDate}</p>
+        <p><strong>Место проведения:</strong> ${data.organization.address || 'Не указано'}</p>
+        <p><strong>Председатель:</strong> ${data.creator.firstName} ${data.creator.lastName} ${data.creator.middleName || ''}</p>
+      </div>
+      
+      <div class="participants">
+        <p><strong>Присутствовали:</strong></p>
+        <table>
+          <thead>
+            <tr>
+              <th>№</th>
+              <th>ФИО</th>
+              <th>Должность</th>
+              <th>Подпись</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${participants.map((participant, index) => `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${participant.firstName} ${participant.lastName} ${participant.middleName || ''}</td>
+                <td>${participant.position || 'Член профсоюза'}</td>
+                <td></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="content">
+        <p><strong>Повестка дня:</strong></p>
+        ${data.content || '<p>Содержание протокола будет добавлено позже.</p>'}
+      </div>
+      
+      <div class="signatures">
+        <div class="signature-line">
+          <strong>Председатель:</strong> <span></span> ${data.creator.firstName} ${data.creator.lastName}
+        </div>
+        <div class="signature-line">
+          <strong>Секретарь:</strong> <span></span> _________________
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+// Генерация HTML для повестки дня
+function generateAgendaHTML(data: WorkflowDocumentData): string {
+  const currentDate = new Date().toLocaleDateString('ru-RU');
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Повестка дня</title>
+      <style>
+        body { font-family: 'Times New Roman', serif; margin: 40px; line-height: 1.6; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .title { font-size: 16px; font-weight: bold; margin-bottom: 20px; }
+        .info { margin-bottom: 20px; }
+        .agenda-items { margin-bottom: 20px; }
+        .agenda-item { margin-bottom: 15px; padding: 10px; border-left: 3px solid #007bff; }
+        .signatures { margin-top: 40px; }
+        .signature-line { margin-bottom: 20px; }
+        .signature-line span { display: inline-block; width: 200px; border-bottom: 1px solid #000; margin-right: 20px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="title">ПОВЕСТКА ДНЯ</div>
+        <div>${data.organization.name}</div>
+      </div>
+      
+      <div class="info">
+        <p><strong>Дата проведения:</strong> ${currentDate}</p>
+        <p><strong>Время:</strong> _______________</p>
+        <p><strong>Место проведения:</strong> ${data.organization.address || 'Не указано'}</p>
+        <p><strong>Председатель:</strong> ${data.creator.firstName} ${data.creator.lastName} ${data.creator.middleName || ''}</p>
+      </div>
+      
+      <div class="agenda-items">
+        <p><strong>Вопросы для обсуждения:</strong></p>
+        ${data.content || `
+          <div class="agenda-item">
+            <strong>1.</strong> Организационные вопросы
+          </div>
+          <div class="agenda-item">
+            <strong>2.</strong> Отчет о работе профсоюзной организации
+          </div>
+          <div class="agenda-item">
+            <strong>3.</strong> Планы на следующий период
+          </div>
+          <div class="agenda-item">
+            <strong>4.</strong> Разное
+          </div>
+        `}
+      </div>
+      
+      <div class="signatures">
+        <div class="signature-line">
+          <strong>Председатель:</strong> <span></span> ${data.creator.firstName} ${data.creator.lastName}
+        </div>
+        <div class="signature-line">
+          <strong>Секретарь:</strong> <span></span> _________________
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+// Генерация HTML для постановления
+function generateResolutionHTML(data: WorkflowDocumentData): string {
+  const currentDate = new Date().toLocaleDateString('ru-RU');
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Постановление</title>
+      <style>
+        body { font-family: 'Times New Roman', serif; margin: 40px; line-height: 1.6; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .title { font-size: 16px; font-weight: bold; margin-bottom: 20px; }
+        .info { margin-bottom: 20px; }
+        .resolution-content { margin-bottom: 30px; }
+        .resolution-item { margin-bottom: 15px; padding-left: 20px; }
+        .signatures { margin-top: 40px; }
+        .signature-line { margin-bottom: 20px; }
+        .signature-line span { display: inline-block; width: 200px; border-bottom: 1px solid #000; margin-right: 20px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="title">ПОСТАНОВЛЕНИЕ</div>
+        <div>${data.organization.name}</div>
+      </div>
+      
+      <div class="info">
+        <p><strong>Дата:</strong> ${currentDate}</p>
+        <p><strong>Место:</strong> ${data.organization.address || 'Не указано'}</p>
+      </div>
+      
+      <div class="resolution-content">
+        <p><strong>Рассмотрев вопрос о:</strong></p>
+        ${data.content || `
+          <div class="resolution-item">
+            <strong>1.</strong> Установить размер членских взносов на 2026 год в размере 1% от заработной платы
+          </div>
+          <div class="resolution-item">
+            <strong>2.</strong> Утвердить план работы профсоюзной организации на 2026 год
+          </div>
+          <div class="resolution-item">
+            <strong>3.</strong> Назначить ответственных за выполнение принятых решений
+          </div>
+        `}
+      </div>
+      
+      <div class="signatures">
+        <div class="signature-line">
+          <strong>Председатель:</strong> <span></span> ${data.creator.firstName} ${data.creator.lastName}
+        </div>
+        <div class="signature-line">
+          <strong>Секретарь:</strong> <span></span> _________________
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+// Генерация HTML для ведения заседания
+function generateMeetingConductHTML(data: WorkflowDocumentData): string {
+  const currentDate = new Date().toLocaleDateString('ru-RU');
+  
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Ведение заседания</title>
+      <style>
+        body { font-family: 'Times New Roman', serif; margin: 40px; line-height: 1.6; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .title { font-size: 16px; font-weight: bold; margin-bottom: 20px; }
+        .info { margin-bottom: 20px; }
+        .conduct-content { margin-bottom: 30px; }
+        .conduct-item { margin-bottom: 15px; padding: 10px; background-color: #f9f9f9; }
+        .signatures { margin-top: 40px; }
+        .signature-line { margin-bottom: 20px; }
+        .signature-line span { display: inline-block; width: 200px; border-bottom: 1px solid #000; margin-right: 20px; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="title">ВЕДЕНИЕ ЗАСЕДАНИЯ</div>
+        <div>${data.organization.name}</div>
+      </div>
+      
+      <div class="info">
+        <p><strong>Дата проведения:</strong> ${currentDate}</p>
+        <p><strong>Время начала:</strong> _______________</p>
+        <p><strong>Время окончания:</strong> _______________</p>
+        <p><strong>Председатель:</strong> ${data.creator.firstName} ${data.creator.lastName} ${data.creator.middleName || ''}</p>
+      </div>
+      
+      <div class="conduct-content">
+        <p><strong>Ход заседания:</strong></p>
+        ${data.content || `
+          <div class="conduct-item">
+            <strong>1.</strong> Открытие заседания. Проверка кворума.
+          </div>
+          <div class="conduct-item">
+            <strong>2.</strong> Обсуждение повестки дня.
+          </div>
+          <div class="conduct-item">
+            <strong>3.</strong> Рассмотрение основных вопросов.
+          </div>
+          <div class="conduct-item">
+            <strong>4.</strong> Принятие решений.
+          </div>
+          <div class="conduct-item">
+            <strong>5.</strong> Закрытие заседания.
+          </div>
+        `}
+      </div>
+      
+      <div class="signatures">
+        <div class="signature-line">
+          <strong>Председатель:</strong> <span></span> ${data.creator.firstName} ${data.creator.lastName}
+        </div>
+        <div class="signature-line">
+          <strong>Секретарь:</strong> <span></span> _________________
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+// Основная функция для генерации PDF документов документооборота
+export async function generateWorkflowDocumentPDF(data: WorkflowDocumentData): Promise<string> {
+  try {
+    // Определяем конфигурацию для Puppeteer в зависимости от окружения
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const launchOptions: any = {
+      headless: true,
+      defaultViewport: { width: 1920, height: 1080 },
+    };
+
+    // Для продакшена (Vercel) используем chromium
+    if (process.env.NODE_ENV === 'production') {
+      launchOptions.args = chromium.args;
+      launchOptions.executablePath = await chromium.executablePath();
+    } else {
+      // Для локальной разработки используем системный Chrome
+      launchOptions.args = [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu'
+      ];
+    }
+
+    const browser = await puppeteer.launch(launchOptions);
+    
+    let html: string;
+    
+    // Выбираем шаблон в зависимости от типа документа
+    switch (data.document.type) {
+      case 'PROTOCOL_MEETING':
+        html = generateProtocolMeetingHTML(data);
+        break;
+      case 'AGENDA':
+        html = generateAgendaHTML(data);
+        break;
+      case 'RESOLUTION':
+        html = generateResolutionHTML(data);
+        break;
+      case 'MEETING_CONDUCT':
+        html = generateMeetingConductHTML(data);
+        break;
+      default:
+        throw new Error(`Неизвестный тип документа: ${data.document.type}`);
+    }
+    
+    const pdf = await generatePDFFromHTMLWithBrowser(browser, html);
+    const fileName = `workflow_${data.document.type.toLowerCase()}_${data.document.id}_${Date.now()}.pdf`;
+    const filePath = await savePDF(pdf, fileName);
+    
+    await browser.close();
+    
+    return filePath;
+    
+  } catch (error) {
+    console.error('Error generating workflow document PDF:', error);
+    throw error;
+  }
 }

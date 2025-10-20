@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { createOrganization } from '@/lib/db';
 import { prisma } from '@/lib/database';
 
 export async function GET() {
@@ -23,6 +22,8 @@ export async function GET() {
         address: true,
         phone: true,
         email: true,
+        chairmanId: true,
+        chairmanName: true,
         isActive: true,
         createdAt: true,
         updatedAt: true
@@ -64,14 +65,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const organization = await createOrganization({
-      name,
-      type,
-      address,
-      phone,
-      email,
-      parentId,
-      industry: industry || 'EDUCATION'
+    const organization = await prisma.organization.create({
+      data: {
+        name,
+        type,
+        address,
+        phone,
+        email,
+        parentId: parentId || null,
+        industry: industry || 'EDUCATION',
+        isActive: true
+      }
     });
 
     return NextResponse.json({
@@ -81,6 +85,15 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Create organization error:', error);
+    
+    // Проверяем наличие ошибки unique constraint
+    if (error instanceof Error && error.message.includes('Unique constraint failed')) {
+      return NextResponse.json(
+        { error: 'Организация с таким email уже существует' },
+        { status: 409 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Ошибка при создании организации' },
       { status: 500 }

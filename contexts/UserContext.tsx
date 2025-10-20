@@ -23,16 +23,54 @@ export function UserProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await cachedFetch('/api/auth/me', undefined, 2 * 60 * 1000); // 2 minutes cache
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setUser(data.user);
-        } else {
-          setError(data.error || 'Ошибка загрузки пользователя');
+      
+      // Используем обычный fetch вместо cachedFetch для /api/auth/me
+      const response = await fetch('/api/auth/me', {
+        credentials: 'include', // Включаем cookies
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store', // Отключаем кеширование
+      });
+      
+      console.log('UserContext: API response status:', response.status);
+      console.log('UserContext: Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      if (!response.ok) {
+        console.error('UserContext: API error:', response.status, response.statusText);
+        setError('Ошибка авторизации');
+        setUser(null);
+        return;
+      }
+
+      const data = await response.json();
+      console.log('UserContext: API data:', data);
+      
+      if (!data.success) {
+        setError(data.error || 'Ошибка загрузки пользователя');
+        setUser(null);
+        return;
+      }
+
+      const realUser = data.user;
+      console.log('UserContext: Real user:', realUser);
+
+      // Разрешаем временное переключение роли только супер-администратору
+      const tempUserRaw = typeof window !== 'undefined' ? sessionStorage.getItem('tempUser') : null;
+      if (tempUserRaw && realUser?.role === 'SUPER_ADMIN') {
+        try {
+          const parsedUser = JSON.parse(tempUserRaw);
+          console.log('UserContext: Using temp user:', parsedUser);
+          setUser(parsedUser);
+        } catch (e) {
+          console.error('Error parsing temp user:', e);
+          sessionStorage.removeItem('tempUser');
+          setUser(realUser);
         }
       } else {
-        setError('Ошибка авторизации');
+        if (tempUserRaw) sessionStorage.removeItem('tempUser');
+        console.log('UserContext: Setting real user:', realUser);
+        setUser(realUser);
       }
     } catch (error) {
       console.error('Error fetching user:', error);
@@ -49,6 +87,22 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // Принудительно очищаем кеш браузера при загрузке
+    if (typeof window !== 'undefined') {
+      // Очищаем sessionStorage
+      sessionStorage.removeItem('tempUser');
+      
+      // Очищаем localStorage
+      localStorage.removeItem('user');
+      localStorage.removeItem('auth-token');
+      
+      // Очищаем кеш для /api/auth/me
+      const cacheKey = `/api/auth/me`;
+      if ((window as any).__cache) {
+        delete (window as any).__cache[cacheKey];
+      }
+    }
+    
     fetchUser();
   }, []);
 

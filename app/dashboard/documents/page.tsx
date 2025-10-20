@@ -1,125 +1,265 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useUser } from '@/contexts/UserContext';
+import { useEffect, useState, useCallback } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
+import { useUser } from '@/contexts/UserContext';
+import { useRouter } from 'next/navigation';
 
-interface MembershipDocument {
+interface User {
   id: string;
-  type: 'MEMBERSHIP_APPLICATION' | 'CONSENT_PERSONAL_DATA' | 'PAYMENT_DEDUCTION';
-  fileName: string;
-  filePath: string;
-  status: 'NOT_SIGNED' | 'SIGNED' | 'REJECTED';
-  signedAt?: string;
-  sentToUnion: boolean;
-  sentAt?: string;
-  application: {
-    id: string;
+  firstName: string;
     lastName: string;
-    firstName: string;
     middleName?: string;
     email: string;
-    phone: string;
-    organization: {
-      id: string;
-      name: string;
-      type: string;
-    };
-  };
+  role: string;
+  phone?: string;
 }
 
-export default function DocumentsPage() {
-  const { user } = useUser();
-  const [documents, setDocuments] = useState<MembershipDocument[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedDocument, setSelectedDocument] = useState<MembershipDocument | null>(null);
-  const [filters, setFilters] = useState({
-    organization: '',
-    status: '',
-    type: '',
-    search: ''
-  });
+interface Participant {
+  id: string;
+  userId: string;
+  user: User;
+  status: 'PENDING' | 'SIGNED' | 'REJECTED';
+  createdAt: string;
+  updatedAt: string;
+}
 
-  const fetchDocuments = useCallback(async () => {
-    try {
-      setIsLoading(true);
+interface DocumentType {
+      id: string;
+  title: string;
+  type: 'AGENDA' | 'PROTOCOL_MEETING' | 'EXTRACT_FROM_PROTOCOL' | 'RESOLUTION';
+  status: 'DRAFT' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'COMPLETED';
+  meetingDate?: string;
+  meetingLocation?: string;
+  documentDate?: string;
+  createdAt: string;
+  updatedAt: string;
+  creator: User;
+  participants: Participant[];
+}
+
+const documentTypeNames: Record<string, string> = {
+  AGENDA: 'Повестка дня',
+  PROTOCOL_MEETING: 'Протокол заседания',
+  EXTRACT_FROM_PROTOCOL: 'Выписка из протокола',
+  RESOLUTION: 'Постановление'
+};
+
+export default function DocumentsPage() {
+  const { user, isLoading } = useUser();
+  const router = useRouter();
+
+  const [documents, setDocuments] = useState<DocumentType[]>([]);
+  const [members, setMembers] = useState<User[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(true);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedDocType, setSelectedDocType] = useState<string>('AGENDA');
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
+  const [searchMember, setSearchMember] = useState('');
+  const [filteredMembers, setFilteredMembers] = useState<User[]>([]);
+
+  // Form fields
+  const [formData, setFormData] = useState({
+    title: '',
+    meetingDate: new Date().toISOString().split('T')[0],
+    meetingLocation: '',
+    documentDate: new Date().toISOString().split('T')[0]
+  });
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  // Проверка доступа
+  if (!isLoading && user && !['FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN', 'SUPER_ADMIN'].includes(user.role)) {
+    router.push('/dashboard');
+    return null;
+  }
+
+  // Загружаем документы
+  useEffect(() => {
+    async function loadDocuments() {
+      try {
       const response = await fetch('/api/documents');
       if (response.ok) {
         const data = await response.json();
         setDocuments(data.documents || []);
       }
     } catch (error) {
-      console.error('Error fetching documents:', error);
+        console.error('Error loading documents:', error);
     } finally {
-      setIsLoading(false);
+        setLoadingDocs(false);
+      }
     }
-  }, []);
 
+    if (!isLoading && user) {
+      loadDocuments();
+    }
+  }, [user, isLoading]);
+
+  // Загружаем членов организации
   useEffect(() => {
-    fetchDocuments();
-  }, [fetchDocuments]);
+    async function loadMembers() {
+      try {
+        const response = await fetch('/api/organization-members');
+        if (response.ok) {
+          const data = await response.json();
+          setMembers(data.members || []);
+        }
+      } catch (error) {
+        console.error('Error loading members:', error);
+      }
+    }
 
-  const getDocumentTypeLabel = (type: string) => {
-    switch (type) {
-      case 'MEMBERSHIP_APPLICATION':
-        return 'Заявление на вступление';
-      case 'CONSENT_PERSONAL_DATA':
-        return 'Согласие на обработку данных';
-      case 'PAYMENT_DEDUCTION':
-        return 'Заявление на удержание взносов';
-      default:
-        return type;
+    if (!isLoading && user) {
+      loadMembers();
+    }
+  }, [user, isLoading]);
+
+  // Фильтруем членов по поиску
+  useEffect(() => {
+    if (searchMember.trim()) {
+      const filtered = members.filter(m => 
+        `${m.firstName} ${m.lastName}`.toLowerCase().includes(searchMember.toLowerCase()) ||
+        m.email.toLowerCase().includes(searchMember.toLowerCase())
+      );
+      setFilteredMembers(filtered.slice(0, 10));
+    } else {
+      setFilteredMembers([]);
+    }
+  }, [searchMember, members]);
+
+  const handleAddParticipant = (participantId: string) => {
+    if (!selectedParticipants.includes(participantId)) {
+      setSelectedParticipants([...selectedParticipants, participantId]);
+      setSearchMember('');
+      setFilteredMembers([]);
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'NOT_SIGNED':
-        return 'Не подписано';
-      case 'SIGNED':
-        return 'Подписано';
-      case 'REJECTED':
-        return 'Отклонено';
-      default:
-        return status;
+  const handleRemoveParticipant = (participantId: string) => {
+    setSelectedParticipants(selectedParticipants.filter(id => id !== participantId));
+  };
+
+  const handleFileUpload = async (file: File): Promise<string | null> => {
+    try {
+      setUploading(true);
+      const formDataForUpload = new FormData();
+      formDataForUpload.append('file', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formDataForUpload
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.filePath;
+      }
+      return null;
+    } catch (error) {
+      console.error('File upload error:', error);
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleCreateDocument = async () => {
+    if (!formData.title || selectedParticipants.length === 0) {
+      alert('Пожалуйста заполните все поля и выберите участников');
+      return;
+    }
+
+    try {
+      let uploadedFilePath = null;
+      
+      // Загружаем файл если он был выбран
+      if (uploadedFile) {
+        uploadedFilePath = await handleFileUpload(uploadedFile);
+        if (!uploadedFilePath) {
+          alert('Ошибка при загрузке файла');
+          return;
+        }
+      }
+
+      const response = await fetch('/api/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formData.title,
+          type: selectedDocType,
+          meetingDate: formData.meetingDate,
+          meetingLocation: formData.meetingLocation,
+          documentDate: formData.documentDate,
+          participantIds: selectedParticipants,
+          uploadedFilePath
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setDocuments([data.document, ...documents]);
+        setShowCreateForm(false);
+        setFormData({
+          title: '',
+          meetingDate: new Date().toISOString().split('T')[0],
+          meetingLocation: '',
+          documentDate: new Date().toISOString().split('T')[0]
+        });
+        setUploadedFile(null);
+        setSelectedParticipants([]);
+        alert('Документ создан успешно');
+      }
+    } catch (error) {
+      console.error('Error creating document:', error);
+      alert('Ошибка при создании документа');
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'NOT_SIGNED':
-        return 'bg-orange-100 text-orange-600';
-      case 'SIGNED':
-        return 'bg-green-100 text-green-600';
-      case 'REJECTED':
-        return 'bg-red-100 text-red-600';
-      default:
-        return 'bg-gray-100 text-gray-600';
+      case 'DRAFT': return 'bg-gray-500';
+      case 'PENDING_APPROVAL': return 'bg-yellow-500';
+      case 'APPROVED': return 'bg-blue-500';
+      case 'COMPLETED': return 'bg-green-500';
+      case 'REJECTED': return 'bg-red-500';
+      default: return 'bg-gray-500';
     }
   };
 
-  const filteredDocuments = documents.filter(doc => {
-    const matchesOrganization = !filters.organization || doc.application.organization.name.toLowerCase().includes(filters.organization.toLowerCase());
-    const matchesStatus = !filters.status || doc.status === filters.status;
-    const matchesType = !filters.type || doc.type === filters.type;
-    const matchesSearch = !filters.search || 
-      `${doc.application.lastName} ${doc.application.firstName} ${doc.application.middleName}`.toLowerCase().includes(filters.search.toLowerCase()) ||
-      doc.application.email.toLowerCase().includes(filters.search.toLowerCase()) ||
-      doc.application.phone.includes(filters.search);
-    
-    return matchesOrganization && matchesStatus && matchesType && matchesSearch;
-  });
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'DRAFT': return 'Черновик';
+      case 'PENDING_APPROVAL': return 'На согласовании';
+      case 'APPROVED': return 'Одобрен';
+      case 'COMPLETED': return 'Завершен';
+      case 'REJECTED': return 'Отклонен';
+      default: return status;
+    }
+  };
 
-  const organizations = [...new Set(documents.map(doc => doc.application.organization.name))].sort();
+  const getParticipantStatusColor = (status: string) => {
+    switch (status) {
+      case 'SIGNED': return 'bg-green-100 text-green-800';
+      case 'REJECTED': return 'bg-red-100 text-red-800';
+      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
-  if (!user || user.role !== 'SUPER_ADMIN') {
+  const getParticipantStatusLabel = (status: string) => {
+    switch (status) {
+      case 'SIGNED': return '✓ Подписано';
+      case 'REJECTED': return '✗ Отклонено';
+      case 'PENDING': return '⏳ Ожидаем подписи';
+      default: return status;
+    }
+  };
+
+  if (isLoading || loadingDocs) {
     return (
       <DashboardLayout>
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Доступ запрещен</h1>
-            <p className="text-gray-600 dark:text-gray-400">Только супер-администраторы могут просматривать документооборот</p>
-          </div>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-gray-400">Загрузка...</div>
         </div>
       </DashboardLayout>
     );
@@ -127,210 +267,27 @@ export default function DocumentsPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Документооборот
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Полный обзор всех документов от всех организаций и членов профсоюза
-          </p>
-        </div>
-
-        {/* Filters */}
-        <div className="card rounded-lg p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Поиск по ФИО/Email/Телефону
-              </label>
-              <input
-                type="text"
-                value={filters.search}
-                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                placeholder="Введите данные для поиска..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Организация
-              </label>
-              <select
-                value={filters.organization}
-                onChange={(e) => setFilters(prev => ({ ...prev, organization: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
-              >
-                <option value="">Все организации</option>
-                {organizations.map(org => (
-                  <option key={org} value={org}>{org}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Тип документа
-              </label>
-              <select
-                value={filters.type}
-                onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
-              >
-                <option value="">Все типы</option>
-                <option value="MEMBERSHIP_APPLICATION">Заявление на вступление</option>
-                <option value="CONSENT_PERSONAL_DATA">Согласие на обработку данных</option>
-                <option value="PAYMENT_DEDUCTION">Заявление на удержание взносов</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Статус
-              </label>
-              <select
-                value={filters.status}
-                onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
-              >
-                <option value="">Все статусы</option>
-                <option value="NOT_SIGNED">Не подписано</option>
-                <option value="SIGNED">Подписано</option>
-                <option value="REJECTED">Отклонено</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Documents List */}
-        <div className="card rounded-lg overflow-hidden">
-          {isLoading ? (
-            <div className="p-8 text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <p className="mt-2 text-gray-400">Загрузка документов...</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr style={{ backgroundColor: 'var(--card-bg)', borderBottom: '1px solid var(--card-border)' }}>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Член профсоюза
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Организация
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Тип документа
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Статус подписания
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Отправка в профсоюз
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Действия
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y" style={{ borderColor: 'var(--card-border)' }}>
-                  {filteredDocuments.map((document) => (
-                    <tr key={document.id}>
-                      <td className="px-6 py-4">
-                        <div>
-                          <div className="text-sm font-medium">
-                            {document.application.lastName} {document.application.firstName} {document.application.middleName}
-                          </div>
-                          <div className="text-sm text-gray-400">{document.application.email}</div>
-                          <div className="text-sm text-gray-400">{document.application.phone}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <div>
-                          <div className="font-medium">{document.application.organization.name}</div>
-                          <div className="text-gray-400">{document.application.organization.type}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        {getDocumentTypeLabel(document.type)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(document.status)}`}>
-                          {getStatusLabel(document.status)}
-                        </span>
-                        {document.signedAt && (
-                          <div className="text-xs text-gray-400 mt-1">
-                            {new Date(document.signedAt).toLocaleDateString('ru-RU')}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          document.sentToUnion 
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
-                        }`}>
-                          {document.sentToUnion ? 'Отправлено' : 'Не отправлено'}
-                        </span>
-                        {document.sentAt && (
-                          <div className="text-xs text-gray-400 mt-1">
-                            {new Date(document.sentAt).toLocaleDateString('ru-RU')}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-sm">
-                        <div className="flex space-x-2">
+      <div className="space-y-6">
+        {/* Заголовок и кнопка */}
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-white">Электронный документооборот</h1>
                           <button
-                            onClick={() => setSelectedDocument(document)}
-                            className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                            title="Просмотр"
+            onClick={() => setShowCreateForm(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
+            + Создать документ
                           </button>
-                          <a
-                            href={document.filePath}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 text-green-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
-                            title="Скачать"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                          </a>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              
-              {filteredDocuments.length === 0 && (
-                <div className="p-8 text-center">
-                  <p className="text-gray-400">Документы не найдены</p>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
-        {/* Document Details Modal */}
-        {selectedDocument && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">
-                  Детали документа
-                </h3>
+        {/* Модальное окно создания документа */}
+        {showCreateForm && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+            <div className="bg-gray-800 rounded-lg p-6 max-w-5xl w-full max-h-[90vh] overflow-y-auto shadow-xl animate-in zoom-in-95 duration-300">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-white">Создать документ</h2>
                 <button
-                  onClick={() => setSelectedDocument(null)}
-                  className="text-gray-400 hover:text-gray-600"
+                  onClick={() => setShowCreateForm(false)}
+                  className="text-gray-400 hover:text-gray-200"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -338,63 +295,240 @@ export default function DocumentsPage() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Информация о документе */}
-                <div>
-                  <h4 className="font-medium mb-3">Информация о документе</h4>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="font-medium">Тип:</span> {getDocumentTypeLabel(selectedDocument.type)}</p>
-                    <p><span className="font-medium">Файл:</span> {selectedDocument.fileName}</p>
-                    <p><span className="font-medium">Статус:</span> 
-                      <span className={`ml-2 px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(selectedDocument.status)}`}>
-                        {getStatusLabel(selectedDocument.status)}
-                      </span>
-                    </p>
-                    {selectedDocument.signedAt && (
-                      <p><span className="font-medium">Дата подписания:</span> {new Date(selectedDocument.signedAt).toLocaleDateString('ru-RU')}</p>
-                    )}
-                    <p><span className="font-medium">Отправлено в профсоюз:</span> {selectedDocument.sentToUnion ? 'Да' : 'Нет'}</p>
-                    {selectedDocument.sentAt && (
-                      <p><span className="font-medium">Дата отправки:</span> {new Date(selectedDocument.sentAt).toLocaleDateString('ru-RU')}</p>
-                    )}
+              <div className="space-y-4">
+                {/* Верхний ряд: Тип и Название */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Тип документа */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Тип документа *</label>
+                    <select
+                      value={selectedDocType}
+                      onChange={(e) => setSelectedDocType(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white"
+                    >
+                      {Object.entries(documentTypeNames).map(([key, name]) => (
+                        <option key={key} value={key}>{name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Название документа */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Название *</label>
+                    <input
+                      type="text"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      placeholder="Введите название документа"
+                      className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white"
+                    />
                   </div>
                 </div>
 
-                {/* Информация о заявителе */}
-                <div>
-                  <h4 className="font-medium mb-3">Информация о заявителе</h4>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="font-medium">ФИО:</span> {selectedDocument.application.lastName} {selectedDocument.application.firstName} {selectedDocument.application.middleName}</p>
-                    <p><span className="font-medium">Email:</span> {selectedDocument.application.email}</p>
-                    <p><span className="font-medium">Телефон:</span> {selectedDocument.application.phone}</p>
-                    <p><span className="font-medium">Организация:</span> {selectedDocument.application.organization.name}</p>
-                    <p><span className="font-medium">Тип организации:</span> {selectedDocument.application.organization.type}</p>
+                {/* Второй ряд: Дата заседания и Место проведения */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Дата заседания */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Дата заседания</label>
+                    <input
+                      type="date"
+                      value={formData.meetingDate}
+                      onChange={(e) => setFormData({ ...formData, meetingDate: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white"
+                    />
                   </div>
+
+                  {/* Место проведения */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Место проведения</label>
+                    <input
+                      type="text"
+                      value={formData.meetingLocation}
+                      onChange={(e) => setFormData({ ...formData, meetingLocation: e.target.value })}
+                      placeholder="Введите место проведения"
+                      className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Дата документа - одна колонна */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Дата документа</label>
+                  <input
+                    type="date"
+                    value={formData.documentDate}
+                    onChange={(e) => setFormData({ ...formData, documentDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white"
+                  />
+                </div>
+
+                {/* Выбор участников */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Участники *</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={searchMember}
+                      onChange={(e) => setSearchMember(e.target.value)}
+                      placeholder="Поиск по имени или почте..."
+                      className="w-full px-3 py-2 border border-gray-600 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-700 text-white"
+                    />
+                    {filteredMembers.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 bg-gray-700 border border-gray-600 rounded-md mt-1 max-h-40 overflow-y-auto z-10">
+                        {filteredMembers.map(member => (
+                          <button
+                            key={member.id}
+                            onClick={() => handleAddParticipant(member.id)}
+                            className="w-full text-left px-3 py-2 hover:bg-gray-600 text-white transition"
+                          >
+                            {member.firstName} {member.lastName} ({member.email})
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Выбранные участники */}
+                  {selectedParticipants.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {selectedParticipants.map(participantId => {
+                        const participant = members.find(m => m.id === participantId);
+                        if (!participant) return null;
+                        return (
+                          <div
+                            key={participantId}
+                            className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                          >
+                            {participant.firstName} {participant.lastName}
+                            <button
+                              onClick={() => handleRemoveParticipant(participantId)}
+                              className="hover:text-gray-300"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Загрузка документа */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Загрузить документ (опционально)</label>
+                  <div className="border-2 border-dashed border-gray-600 rounded-lg p-6 text-center hover:border-blue-500 transition">
+                    <input
+                      type="file"
+                      id="file-upload"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setUploadedFile(e.target.files[0]);
+                        }
+                      }}
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+                    />
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                      {uploadedFile ? (
+                        <div className="text-green-400">
+                          <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <p className="font-semibold">Файл выбран: {uploadedFile.name}</p>
+                          <p className="text-xs text-gray-400 mt-1">{(uploadedFile.size / 1024 / 1024).toFixed(2)} МБ</p>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setUploadedFile(null);
+                            }}
+                            className="text-red-400 text-sm mt-2 hover:text-red-300"
+                          >
+                            Удалить файл
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <svg className="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                          <p className="text-gray-300">Перетащите файл или нажмите для выбора</p>
+                          <p className="text-xs text-gray-400 mt-1">PDF, DOC, XLS до 50 МБ</p>
+                        </div>
+                      )}
+                    </label>
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-end space-x-4">
-                <a
-                  href={selectedDocument.filePath}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Скачать документ
-                </a>
+                {/* Кнопки действия */}
+                <div className="flex gap-2 justify-end pt-4">
+                  <button
+                    onClick={() => setShowCreateForm(false)}
+                    className="px-4 py-2 border border-gray-500 text-gray-300 rounded-lg hover:bg-gray-700 transition"
+                  >
+                    Отмена
+                  </button>
                 <button
-                  onClick={() => setSelectedDocument(null)}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+                    onClick={handleCreateDocument}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
                 >
-                  Закрыть
+                    Создать
                 </button>
+                </div>
               </div>
             </div>
           </div>
         )}
+
+        {/* Список документов */}
+        <div className="space-y-4">
+          {documents.length === 0 ? (
+            <div className="bg-gray-800 rounded-lg p-8 text-center text-gray-400">
+              Документов нет. Создайте первый документ!
+            </div>
+          ) : (
+            documents.map(doc => (
+              <div key={doc.id} className="bg-gray-800 rounded-lg p-6 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">{doc.title}</h3>
+                    <p className="text-sm text-gray-400">
+                      {documentTypeNames[doc.type]} • {new Date(doc.createdAt).toLocaleDateString('ru-RU')}
+                    </p>
+                    <p className="text-sm text-gray-400">Создатель: {doc.creator.firstName} {doc.creator.lastName}</p>
+                  </div>
+                  <span className={`${getStatusColor(doc.status)} text-white px-3 py-1 rounded-full text-xs font-medium`}>
+                    {getStatusLabel(doc.status)}
+                  </span>
+                </div>
+
+                {doc.meetingLocation && (
+                  <p className="text-sm text-gray-300">📍 {doc.meetingLocation}</p>
+                )}
+                {doc.meetingDate && (
+                  <p className="text-sm text-gray-300">📅 {new Date(doc.meetingDate).toLocaleDateString('ru-RU')}</p>
+                )}
+
+                {/* Участники и статусы подписей */}
+                {doc.participants.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-300 mb-3">Статусы подписей:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {doc.participants.map(participant => (
+                        <div
+                          key={participant.id}
+                          className={`${getParticipantStatusColor(participant.status)} px-3 py-1 rounded-full text-xs font-medium`}
+                        >
+                          {participant.user.firstName} {participant.user.lastName}: {getParticipantStatusLabel(participant.status)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </DashboardLayout>
   );

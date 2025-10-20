@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -24,7 +24,7 @@ interface Application {
   documents: Document[];
 }
 
-export default function RegistrationDocumentsPage() {
+function RegistrationDocumentsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const applicationId = searchParams.get('id');
@@ -68,7 +68,9 @@ export default function RegistrationDocumentsPage() {
       });
       
       if (response.ok) {
-        router.push('/login?message=registration-complete');
+        const data = await response.json();
+        // Перенаправляем в личный кабинет пользователя или на страницу входа
+        router.push(data.redirectUrl || '/login');
       } else {
         setError('Ошибка при сохранении');
       }
@@ -80,8 +82,20 @@ export default function RegistrationDocumentsPage() {
   };
 
   const handleDownloadDocument = (document: Document) => {
-    // Открываем PDF в новой вкладке
-    window.open(document.filePath, '_blank');
+    // Скачиваем PDF через API endpoint
+    const downloadUrl = `/api/membership/document/${document.id}/download`;
+    const link = window.document.createElement('a');
+    link.href = downloadUrl;
+    link.download = document.fileName;
+    window.document.body.appendChild(link);
+    link.click();
+    window.document.body.removeChild(link);
+  };
+
+  const handleViewDocument = (document: Document) => {
+    // Открываем PDF для просмотра в новой вкладке
+    const viewUrl = `/api/membership/document/${document.id}/download`;
+    window.open(viewUrl, '_blank');
   };
 
   const getDocumentTypeLabel = (type: string) => {
@@ -222,7 +236,7 @@ export default function RegistrationDocumentsPage() {
                         Скачать PDF
                       </button>
                       <button
-                        onClick={() => handleDownloadDocument(document)}
+                        onClick={() => handleViewDocument(document)}
                         className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                       >
                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,7 +272,7 @@ export default function RegistrationDocumentsPage() {
               </h3>
               <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
                 <ol className="list-decimal list-inside space-y-1">
-                  <li>Скачайте каждый документ, нажав кнопку "Скачать PDF"</li>
+                  <li>Скачайте каждый документ, нажав кнопку &quot;Скачать PDF&quot;</li>
                   <li>Распечатайте документы на принтере</li>
                   <li>Подпишите документы собственноручно</li>
                   <li>Отсканируйте или сфотографируйте подписанные документы</li>
@@ -279,7 +293,7 @@ export default function RegistrationDocumentsPage() {
             {isSigningLater ? 'Сохранение...' : 'Подписать позже'}
           </button>
           <Link
-            href="/login?message=registration-complete"
+            href="/dashboard?message=registration-complete"
             className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
           >
             Перейти в личный кабинет
@@ -287,5 +301,17 @@ export default function RegistrationDocumentsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegistrationDocumentsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+      </div>
+    }>
+      <RegistrationDocumentsContent />
+    </Suspense>
   );
 }

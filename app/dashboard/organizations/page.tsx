@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
+import { useUser } from '@/contexts/UserContext';
 import { Organization, OrganizationType, AdminUser, UserRole, UnionIndustry } from '@/types';
 import { getRolesByOrganizationType } from '@/lib/role-config';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
@@ -58,10 +60,12 @@ const industryLabels = {
 };
 
 export default function OrganizationsPage() {
+  const { user, isLoading } = useUser();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'organizations' | 'admins'>('organizations');
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [admins, setAdmins] = useState<AdminUser[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isPageLoading, setIsPageLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -116,7 +120,7 @@ export default function OrganizationsPage() {
 
   const fetchOrganizations = useCallback(async () => {
     try {
-      setIsLoading(true);
+      setIsPageLoading(true);
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
       if (typeFilter) params.append('type', typeFilter);
@@ -132,7 +136,7 @@ export default function OrganizationsPage() {
     } catch (error) {
       console.error('Error fetching organizations:', error);
     } finally {
-      setIsLoading(false);
+      setIsPageLoading(false);
     }
   }, [searchTerm, typeFilter]);
 
@@ -383,6 +387,25 @@ export default function OrganizationsPage() {
     }
     return [];
   };
+
+  // Проверка доступа: только SUPER_ADMIN может видеть страницу Организации
+  if (!isLoading && user && user.role !== 'SUPER_ADMIN') {
+    router.push('/dashboard');
+    return null;
+  }
+
+  if (isPageLoading) {
+    return (
+      <DashboardLayout>
+        <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="mt-2 text-gray-400">Загрузка...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout userRole="SUPER_ADMIN">

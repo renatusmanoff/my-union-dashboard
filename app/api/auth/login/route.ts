@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createToken, verifyPassword } from '@/lib/auth';
 import { cookies } from 'next/headers';
-import { UserRole, OrganizationType } from '@/types';
+import { UserRole } from '@prisma/client';
+import { OrganizationType } from '@/types';
 import { prisma } from '@/lib/database';
 
 export async function POST(request: NextRequest) {

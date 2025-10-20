@@ -18,7 +18,12 @@ export async function GET() {
     
     if (currentUser.role === 'PRIMARY_MEMBER') {
       // Члены профсоюза видят только свои заявления
-      whereClause = { userId: currentUser.id };
+      whereClause = { 
+        OR: [
+          { userId: currentUser.id },
+          { userId: null, organizationId: currentUser.organizationId } // Заявления без привязки к пользователю в той же организации
+        ]
+      };
     } else if (['FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN'].includes(currentUser.role)) {
       // Председатели видят заявления своей организации
       whereClause = { organizationId: currentUser.organizationId };
@@ -131,7 +136,10 @@ export async function POST(request: NextRequest) {
 
     // Генерируем PDF документы
     const documents = await generateMembershipDocuments({
-      application,
+      application: {
+        ...application,
+        middleName: application.middleName || undefined
+      },
       organization,
       chairman
     });

@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, isSuperAdmin } from '@/lib/auth';
 import { AdminUser } from '@/types';
 import { getRolesByOrganizationType } from '@/lib/role-config';
-import { sendAdminCredentials } from '@/lib/email';
+import { sendAdminCredentials, sendOrganizationCreatedNotification } from '@/lib/email';
+import { prisma } from '@/lib/database';
+import { hashPassword } from '@/lib/auth';
 
 // Функция для генерации временного пароля
 function generateTemporaryPassword(): string {
@@ -58,25 +60,51 @@ export async function POST(request: NextRequest) {
 
     // Генерируем временный пароль
     const temporaryPassword = generateTemporaryPassword();
-    // const hashedPassword = await hashPassword(temporaryPassword); // TODO: Сохранить в БД
+    const hashedPassword = await hashPassword(temporaryPassword);
+    
+    // Создаем пользователя в базе данных
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        firstName,
+        lastName,
+        middleName: middleName || null,
+        phone,
+        role: roles[0], // Основная роль - первая из выбранных
+        organizationId,
+        password: hashedPassword,
+        isActive: true,
+        emailVerified: false,
+        membershipValidated: false
+      }
+    });
 
-    // Здесь должен быть запрос к базе данных
-    // Пока создаем мокового администратора
+    // Обновляем организацию с данными председателя
+    const chairmanFullName = `${firstName} ${lastName}${middleName ? ' ' + middleName : ''}`;
+    await prisma.organization.update({
+      where: { id: organizationId },
+      data: {
+        chairmanId: newUser.id,
+        chairmanName: chairmanFullName
+      }
+    });
+
+    // Создаем объект администратора для ответа
     const newAdmin: AdminUser = {
-      id: `admin-${Date.now()}`,
-      email,
-      firstName,
-      lastName,
-      middleName,
-      phone,
-      role: roles[0], // Основная роль - первая из выбранных
-      organizationId,
-      organizationName: organizationName || `Организация ${organizationType}`, // Должно быть получено из БД
-      isActive: true,
-      emailVerified: false,
+      id: newUser.id,
+      email: newUser.email,
+      firstName: newUser.firstName,
+      lastName: newUser.lastName,
+      middleName: newUser.middleName,
+      phone: newUser.phone,
+      role: newUser.role as any,
+      organizationId: newUser.organizationId!,
+      organizationName: organizationName || `Организация ${organizationType}`,
+      isActive: newUser.isActive,
+      emailVerified: newUser.emailVerified,
       temporaryPassword,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: newUser.createdAt,
+      updatedAt: newUser.updatedAt
     };
 
     // Отправляем email с учетными данными
@@ -89,8 +117,19 @@ export async function POST(request: NextRequest) {
       organizationName: newAdmin.organizationName
     });
 
+    // Отправляем уведомление о создании организации на support@myunion.pro
+    const notificationSent = await sendOrganizationCreatedNotification(
+      organizationName,
+      organizationType,
+      chairmanFullName,
+      email
+    );
+
     if (!emailSent) {
       console.warn('Failed to send admin credentials email, but admin was created');
+    }
+    if (!notificationSent) {
+      console.warn('Failed to send organization created notification');
     }
 
     return NextResponse.json({
@@ -110,6 +149,7 @@ export async function POST(request: NextRequest) {
         createdAt: newAdmin.createdAt
       },
       emailSent,
+      notificationSent,
       temporaryPassword: emailSent ? undefined : temporaryPassword,
       message: emailSent 
         ? 'Администратор создан и учетные данные отправлены на email'

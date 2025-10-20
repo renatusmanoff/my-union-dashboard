@@ -13,9 +13,22 @@ export async function GET() {
     }
 
     // Получаем заявления пользователя с документами
+    // Ищем заявления по userId или по email (для случаев когда регистрация была без авторизации)
     const applications = await prisma.membershipApplication.findMany({
       where: {
-        userId: currentUser.id
+        OR: [
+          { userId: currentUser.id },
+          { 
+            AND: [
+              { userId: null },
+              { 
+                user: {
+                  email: currentUser.email
+                }
+              }
+            ]
+          }
+        ]
       },
       include: {
         documents: {

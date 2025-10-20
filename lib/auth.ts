@@ -1,7 +1,9 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
-import { User, UserRole, OrganizationType } from '@/types';
+import { UserRole } from '@prisma/client';
+import { OrganizationType } from '@/types';
+import { User } from '@prisma/client';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -16,7 +18,22 @@ interface JWTPayload {
 }
 
 // Функция для создания JWT токена
-export function createToken(user: Omit<User, 'createdAt' | 'updatedAt'>): string {
+export function createToken(user: {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  phone: string;
+  role: UserRole;
+  organizationId: string;
+  organizationName: string;
+  organizationType: OrganizationType;
+  avatar?: string;
+  isActive: boolean;
+  emailVerified: boolean;
+  membershipValidated: boolean;
+}): string {
   const payload: JWTPayload = {
     userId: user.id,
     email: user.email,
@@ -37,7 +54,24 @@ export function verifyToken(token: string): JWTPayload | null {
 }
 
 // Функция для получения пользователя из токена
-export async function getCurrentUser(): Promise<User | null> {
+export async function getCurrentUser(): Promise<{
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  phone: string;
+  role: UserRole;
+  organizationId: string;
+  organizationName: string;
+  organizationType: OrganizationType;
+  avatar?: string;
+  isActive: boolean;
+  emailVerified: boolean;
+  membershipValidated: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+} | null> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;

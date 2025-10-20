@@ -2,12 +2,12 @@ import nodemailer from 'nodemailer';
 
 // Конфигурация SMTP
 const smtpConfig = {
-  host: process.env.SMTP_HOST || 'smtp.mail.ru',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: false, // true для 465, false для других портов
+  host: process.env.SMTP_HOST || 'smtp.beget.com',
+  port: parseInt(process.env.SMTP_PORT || '465'),
+  secure: true, // true для 465, false для других портов
   auth: {
     user: process.env.SMTP_USER || 'support@myunion.pro',
-    pass: process.env.SMTP_PASS || '8uld1thwBBN1XVNbmW9p'
+    pass: process.env.SMTP_PASSWORD || 'MyUnion2024!'
   }
 };
 
@@ -55,7 +55,7 @@ export async function sendAdminCredentials(adminData: AdminCredentials): Promise
     }
 
     const mailOptions = {
-      from: process.env.SMTP_FROM || 'support@myunion.pro',
+      from: `"My Union" <support@myunion.pro>`,
       to: adminData.email,
       subject: 'Учетные данные для входа в систему MyUnion',
       html: generateAdminCredentialsEmail(adminData)
@@ -81,7 +81,7 @@ export async function sendTestEmail(testEmail: string): Promise<boolean> {
     }
 
     const mailOptions = {
-      from: process.env.SMTP_FROM || 'support@myunion.pro',
+      from: `"My Union" <support@myunion.pro>`,
       to: testEmail,
       subject: 'Тестовое письмо от MyUnion',
       html: `
@@ -248,7 +248,7 @@ export async function sendMembershipValidationEmail(
 ): Promise<boolean> {
   try {
     const mailOptions = {
-      from: process.env.SMTP_FROM || 'support@myunion.pro',
+      from: `"My Union" <support@myunion.pro>`,
       to: email,
       subject: status === 'APPROVED' 
         ? 'Ваше членство в профсоюзе подтверждено' 
@@ -375,6 +375,148 @@ function generateMembershipValidationEmail(
   `;
 }
 
+// Отправка уведомления о создании новой организации
+export async function sendOrganizationCreatedNotification(
+  organizationName: string,
+  organizationType: string,
+  chairmanName: string,
+  chairmanEmail: string
+): Promise<boolean> {
+  try {
+    const mailOptions = {
+      from: `"My Union" <support@myunion.pro>`,
+      to: process.env.SMTP_FROM || 'support@myunion.pro',
+      subject: 'Новая организация создана в системе MyUnion',
+      html: generateOrganizationCreatedEmail(organizationName, organizationType, chairmanName, chairmanEmail)
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Organization created notification sent:', info.messageId);
+    return true;
+  } catch (error) {
+    console.error('Failed to send organization created notification:', error);
+    return false;
+  }
+}
+
+// Генерация HTML письма о создании организации
+function generateOrganizationCreatedEmail(
+  organizationName: string,
+  organizationType: string,
+  chairmanName: string,
+  chairmanEmail: string
+): string {
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Новая организация создана</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f4f4f4;
+            }
+            .container {
+                background-color: #ffffff;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            }
+            .header {
+                text-align: center;
+                margin-bottom: 30px;
+                padding-bottom: 20px;
+                border-bottom: 2px solid #28a745;
+            }
+            .logo {
+                font-size: 24px;
+                font-weight: bold;
+                color: #007bff;
+                margin-bottom: 10px;
+            }
+            .info-box {
+                background-color: #f8f9fa;
+                border: 1px solid #dee2e6;
+                border-radius: 5px;
+                padding: 20px;
+                margin: 20px 0;
+            }
+            .info-item {
+                margin: 10px 0;
+                padding: 10px;
+                background-color: #ffffff;
+                border-left: 4px solid #28a745;
+                border-radius: 3px;
+            }
+            .label {
+                font-weight: bold;
+                color: #495057;
+            }
+            .value {
+                color: #212529;
+                margin-top: 5px;
+            }
+            .footer {
+                text-align: center;
+                margin-top: 30px;
+                padding-top: 20px;
+                border-top: 1px solid #dee2e6;
+                color: #6c757d;
+                font-size: 14px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <div class="logo">MyUnion</div>
+                <h1>Новая организация создана</h1>
+            </div>
+            
+            <p>В системе MyUnion была создана новая организация:</p>
+            
+            <div class="info-box">
+                <div class="info-item">
+                    <div class="label">Название организации:</div>
+                    <div class="value">${organizationName}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Тип организации:</div>
+                    <div class="value">${organizationType}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Председатель:</div>
+                    <div class="value">${chairmanName}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Email председателя:</div>
+                    <div class="value">${chairmanEmail}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Дата создания:</div>
+                    <div class="value">${new Date().toLocaleString('ru-RU')}</div>
+                </div>
+            </div>
+            
+            <p>Председателю организации были отправлены учетные данные для входа в систему.</p>
+            
+            <div class="footer">
+                <p>Это автоматическое сообщение системы MyUnion.</p>
+                <p>© 2024 MyUnion - Система управления профсоюзными организациями</p>
+            </div>
+        </div>
+    </body>
+    </html>
+  `;
+}
+
 // Отправка письма для сброса пароля
 export async function sendPasswordResetEmail(
   email: string,
@@ -386,7 +528,7 @@ export async function sendPasswordResetEmail(
     const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
     
     const mailOptions = {
-      from: process.env.SMTP_FROM || 'support@myunion.pro',
+      from: `"My Union" <support@myunion.pro>`,
       to: email,
       subject: 'Сброс пароля в системе MyUnion',
       html: generatePasswordResetEmail(firstName, lastName, resetUrl)
@@ -501,4 +643,172 @@ function generatePasswordResetEmail(
     </body>
     </html>
   `;
+}
+
+// Отправка приглашения на подпись документа
+interface DocumentSigningData {
+  participantEmail: string;
+  participantName: string;
+  documentTitle: string;
+  documentType: string;
+  creatorName: string;
+  organizationName: string;
+  signingUrl: string;
+}
+
+export async function sendDocumentSigningInvitation(data: DocumentSigningData): Promise<boolean> {
+  try {
+    if (process.env.NODE_ENV === 'development' && !process.env.SMTP_USER) {
+      console.log('📧 [DEV] Document signing invitation would be sent to:', data.participantEmail);
+      return true;
+    }
+
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Приглашение на подпись документа</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f5f5f5;
+                margin: 0;
+                padding: 0;
+            }
+            .container {
+                max-width: 600px;
+                margin: 20px auto;
+                background-color: white;
+                border-radius: 10px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                overflow: hidden;
+            }
+            .header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 30px 20px;
+                text-align: center;
+            }
+            .logo {
+                font-size: 24px;
+                font-weight: bold;
+                margin-bottom: 10px;
+            }
+            .content {
+                padding: 30px 20px;
+            }
+            h1 {
+                color: #333;
+                margin-top: 0;
+            }
+            p {
+                color: #666;
+                line-height: 1.6;
+                margin: 15px 0;
+            }
+            .document-info {
+                background-color: #f9f9f9;
+                border-left: 4px solid #667eea;
+                padding: 15px;
+                margin: 20px 0;
+                border-radius: 3px;
+            }
+            .document-info strong {
+                display: block;
+                margin-bottom: 5px;
+                color: #333;
+            }
+            .button {
+                display: inline-block;
+                background-color: #667eea;
+                color: white;
+                padding: 12px 24px;
+                text-decoration: none;
+                border-radius: 5px;
+                margin: 20px 0;
+                font-weight: bold;
+            }
+            .button:hover {
+                background-color: #764ba2;
+            }
+            .warning {
+                background-color: #fff3cd;
+                border: 1px solid #ffeaa7;
+                color: #856404;
+                padding: 15px;
+                border-radius: 5px;
+                margin: 20px 0;
+            }
+            .footer {
+                text-align: center;
+                margin-top: 30px;
+                padding-top: 20px;
+                border-top: 1px solid #dee2e6;
+                color: #6c757d;
+                font-size: 12px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <div class="logo">MyUnion</div>
+                <h1>Приглашение на подпись документа</h1>
+            </div>
+            
+            <div class="content">
+                <p>Здравствуйте, <strong>${data.participantName}</strong>!</p>
+                
+                <p>Вас приглашают подписать документ в электронном виде:</p>
+                
+                <div class="document-info">
+                    <strong>Название:</strong> ${data.documentTitle}
+                    <strong>Тип:</strong> ${data.documentType}
+                    <strong>Организация:</strong> ${data.organizationName}
+                    <strong>Инициатор:</strong> ${data.creatorName}
+                </div>
+                
+                <p>Пожалуйста, перейдите по ссылке ниже, чтобы просмотреть и подписать документ:</p>
+                
+                <div style="text-align: center;">
+                    <a href="${data.signingUrl}" class="button">
+                        Подписать документ
+                    </a>
+                </div>
+                
+                <p>Если кнопка не работает, скопируйте и вставьте следующую ссылку в браузер:</p>
+                <p style="word-break: break-all; background-color: #f8f9fa; padding: 10px; border-radius: 3px; font-size: 12px;">
+                    ${data.signingUrl}
+                </p>
+                
+                <div class="warning">
+                    <strong>⚠️ Важно:</strong> Ваша подпись требуется для завершения документооборота. Пожалуйста, подпишите документ в течение 7 дней.
+                </div>
+                
+                <div class="footer">
+                    <p>Это автоматическое сообщение, пожалуйста, не отвечайте на него.</p>
+                    <p>&copy; 2024 MyUnion. Все права защищены.</p>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    `;
+
+    const mailOptions = {
+      from: `"My Union" <support@myunion.pro>`,
+      to: data.participantEmail,
+      subject: `Приглашение на подпись: ${data.documentTitle}`,
+      html: htmlContent
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('✅ Document signing invitation sent to:', data.participantEmail);
+    return true;
+  } catch (error) {
+    console.error('Failed to send document signing invitation:', error);
+    return false;
+  }
 }

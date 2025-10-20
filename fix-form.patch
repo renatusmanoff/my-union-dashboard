@@ -1,0 +1,23 @@
+--- a/app/dashboard/super-admin/organizations/page.tsx
++++ b/app/dashboard/super-admin/organizations/page.tsx
+@@ -755,7 +755,7 @@
+                  </div>
+                </div>
+ 
+-                {/* Chairman Data */}
++                {/* Chairman Data - Only for creating new organization */}
+-                <div className="border-t pt-6">
++                {!editingOrg && (
++                <div className="border-t pt-6">
+                   <h4 className="text-md font-semibold mb-4">Данные администратора организации</h4>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div>
+@@ -824,6 +824,7 @@
+                     </select>
+                     </div>
+                   </div>
+                 </div>
++                )}
+ 
+                 <div className="flex space-x-3">
+                   <button

@@ -31,6 +31,7 @@ import {
 import { MenuItem, UserRole } from '@/types';
 import { getMenuByRole } from '@/lib/menu-config';
 import { useUser } from '@/contexts/UserContext';
+import { getRoleLabel as getRoleLabelFromLib } from '@/lib/role-labels';
 
 interface SidebarProps {
   userRole: UserRole;
@@ -172,19 +173,7 @@ export default function Sidebar({ userRole, isCollapsed = false, onToggleCollaps
   };
 
   const getRoleLabel = (role: string) => {
-    const roleLabels: Record<string, string> = {
-      'SUPER_ADMIN': 'Супер-администратор',
-      'FEDERAL_CHAIRMAN': 'Председатель федерального уровня',
-      'REGIONAL_CHAIRMAN': 'Председатель регионального уровня',
-      'LOCAL_CHAIRMAN': 'Председатель местного уровня',
-      'PRIMARY_CHAIRMAN': 'Председатель первичной организации',
-      'FEDERAL_ADMIN': 'Администратор федерального уровня',
-      'REGIONAL_ADMIN': 'Администратор регионального уровня',
-      'LOCAL_ADMIN': 'Администратор местного уровня',
-      'PRIMARY_ADMIN': 'Администратор первичной организации',
-      'PRIMARY_MEMBER': 'Член профсоюза'
-    };
-    return roleLabels[role] || 'Пользователь';
+    return getRoleLabelFromLib(role as UserRole) || 'Пользователь';
   };
 
   return (

@@ -8,14 +8,26 @@ export async function POST(
   try {
     const { id } = await params;
 
+    // Получаем заявление
+    const application = await prisma.membershipApplication.findUnique({
+      where: { id },
+      include: {
+        user: true
+      }
+    });
+
+    if (!application) {
+      return NextResponse.json(
+        { error: 'Заявление не найдено' },
+        { status: 404 }
+      );
+    }
+
     // Обновляем статус заявления на "подписать позже"
-    const application = await prisma.membershipApplication.update({
+    await prisma.membershipApplication.update({
       where: { id },
       data: {
         signLater: true
-      },
-      include: {
-        documents: true
       }
     });
 
@@ -25,13 +37,16 @@ export async function POST(
         applicationId: id
       },
       data: {
-        status: 'NOT_SIGNED'
+        status: 'NOT_SIGNED',
+        signedAt: null
       }
     });
 
     return NextResponse.json({
       success: true,
-      message: 'Заявление сохранено для подписания позже'
+      message: 'Заявление сохранено для подписания позже',
+      userId: application.userId,
+      redirectUrl: application.userId ? '/dashboard/member-documents' : '/login'
     });
 
   } catch (error) {

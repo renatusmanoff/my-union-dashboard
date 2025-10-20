@@ -4,13 +4,14 @@ import { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import { UserRole } from '@/types';
 import { useUser } from '@/contexts/UserContext';
+import { getRoleLabel as getRoleLabelFromLib } from '@/lib/role-labels';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
   userRole?: UserRole;
 }
 
-export default function DashboardLayout({ children, userRole = 'PRIMARY_MEMBER' }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, userRole }: DashboardLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { user, isLoading } = useUser();
 
@@ -19,19 +20,7 @@ export default function DashboardLayout({ children, userRole = 'PRIMARY_MEMBER' 
   };
 
   const getRoleLabel = (role: string) => {
-    const roleLabels: Record<string, string> = {
-      'SUPER_ADMIN': 'Супер-администратор',
-      'FEDERAL_CHAIRMAN': 'Председатель федерального уровня',
-      'REGIONAL_CHAIRMAN': 'Председатель регионального уровня',
-      'LOCAL_CHAIRMAN': 'Председатель местного уровня',
-      'PRIMARY_CHAIRMAN': 'Председатель первичной организации',
-      'FEDERAL_ADMIN': 'Администратор федерального уровня',
-      'REGIONAL_ADMIN': 'Администратор регионального уровня',
-      'LOCAL_ADMIN': 'Администратор местного уровня',
-      'PRIMARY_ADMIN': 'Администратор первичной организации',
-      'PRIMARY_MEMBER': 'Член профсоюза'
-    };
-    return roleLabels[role] || 'Пользователь';
+    return getRoleLabelFromLib(role as UserRole) || 'Пользователь';
   };
 
   return (
@@ -125,13 +114,13 @@ export default function DashboardLayout({ children, userRole = 'PRIMARY_MEMBER' 
                       className="text-sm font-medium"
                       style={{ color: 'var(--text-primary)' }}
                     >
-                      {isLoading ? 'Загрузка...' : user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Пользователь' : 'Иван Иванов'}
+                      {isLoading ? 'Загрузка...' : user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Пользователь' : 'Не авторизован'}
                     </p>
                     <p 
                       className="text-xs"
                       style={{ color: 'var(--text-secondary)' }}
                     >
-                      {isLoading ? '...' : user ? getRoleLabel(user.role) : 'Администратор'}
+                      {isLoading ? '...' : user ? getRoleLabel(user.role) : 'Не авторизован'}
                     </p>
                   </div>
                 </button>

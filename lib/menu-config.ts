@@ -43,7 +43,7 @@ export const menuConfig: MenuItem[] = [
     label: 'Организации',
     href: '/dashboard/organizations',
     icon: 'building-office',
-    roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
+    roles: ['SUPER_ADMIN']
   },
   {
     id: 'messages',

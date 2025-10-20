@@ -11,7 +11,10 @@
     "db:push": "prisma db push",
     "db:seed": "npx tsx prisma/seed.ts",
     "db:migrate": "node scripts/migrate.js",
-    "db:reset": "prisma db push --force-reset"
+    "db:reset": "prisma db push --force-reset",
+    "db:local": "docker-compose up -d",
+    "db:test-timeweb": "bash scripts/test-timeweb-connection.sh",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -20,6 +23,7 @@
     "@types/nodemailer": "^7.0.2",
     "@types/puppeteer": "^5.4.7",
     "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.8.0",
     "cookie": "^1.0.2",
     "flowbite": "^3.1.2",
     "flowbite-react": "^0.12.9",
