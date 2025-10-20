@@ -232,7 +232,7 @@ export default function MembersPage() {
               >
                 <option value="">Все организации</option>
                 {organizations.map(org => (
-                  <option key={org.id} value={org.name}>{org.name}</option>
+                  <option key={org!.id} value={org!.name}>{org!.name}</option>
                 ))}
               </select>
             </div>
