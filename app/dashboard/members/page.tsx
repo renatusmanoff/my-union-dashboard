@@ -231,9 +231,12 @@ export default function MembersPage() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
               >
                 <option value="">Все организации</option>
-                {organizations.map(org => (
-                  <option key={org!.id} value={org!.name}>{org!.name}</option>
-                ))}
+                {organizations.map((org) => {
+                  const organization = org as Organization;
+                  return (
+                    <option key={organization.id} value={organization.name}>{organization.name}</option>
+                  );
+                })}
               </select>
             </div>
           </div>
