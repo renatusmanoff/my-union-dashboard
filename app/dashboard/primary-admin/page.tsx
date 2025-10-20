@@ -38,7 +38,7 @@ export default function FederalAdminDashboard() {
           {/* Заголовок */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">Дашборд администратора</h1>
-            <p className="text-gray-400">Организация: {user?.organization?.name || 'Не указана'}</p>
+            <p className="text-gray-400">Организация: {user?.organizationName || 'Не указана'}</p>
           </div>
 
           {/* Статистика */}

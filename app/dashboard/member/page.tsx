@@ -82,7 +82,7 @@ export default function MemberDashboard() {
           {/* Заголовок */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">Добро пожаловать, {user?.firstName}!</h1>
-            <p className="text-gray-400">Организация: {user?.organization?.name || 'Не указана'}</p>
+            <p className="text-gray-400">Организация: {user?.organizationName || 'Не указана'}</p>
           </div>
 
           {/* Карточка профиля */}

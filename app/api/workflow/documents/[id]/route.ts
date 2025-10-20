@@ -97,7 +97,7 @@ export async function GET(
         child.id,
         ...child.children.map(grandChild => grandChild.id)
       ]) || [];
-      hasPermission = allChildIds.includes(document.organizationId);
+      hasPermission = document.organizationId ? allChildIds.includes(document.organizationId) : false;
     }
 
     if (!hasPermission) {
@@ -179,7 +179,7 @@ export async function PATCH(
         child.id,
         ...child.children.map(grandChild => grandChild.id)
       ]) || [];
-      hasPermission = allChildIds.includes(document.organizationId);
+      hasPermission = document.organizationId ? allChildIds.includes(document.organizationId) : false;
     }
 
     if (!hasPermission) {
@@ -364,7 +364,7 @@ export async function DELETE(
         child.id,
         ...child.children.map(grandChild => grandChild.id)
       ]) || [];
-      hasPermission = allChildIds.includes(document.organizationId) && document.creatorId === currentUser.id;
+      hasPermission = (document.organizationId ? allChildIds.includes(document.organizationId) : false) && document.creatorId === currentUser.id;
     }
 
     if (!hasPermission) {

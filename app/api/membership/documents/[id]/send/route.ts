@@ -94,11 +94,11 @@ export async function PATCH(
 
     const allDocumentsSent = allDocuments.every(doc => doc.sentToUnion);
 
-    // Если все документы отправлены, меняем статус заявления на PENDING_VALIDATION
+    // Если все документы отправлены, меняем статус заявления на PENDING
     if (allDocumentsSent) {
       await prisma.membershipApplication.update({
         where: { id: document.applicationId },
-        data: { status: 'PENDING_VALIDATION' }
+        data: { status: 'PENDING' }
       });
     }
 
