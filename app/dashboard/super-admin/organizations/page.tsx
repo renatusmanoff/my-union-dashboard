@@ -501,7 +501,7 @@ export default function OrganizationsPage() {
             ? {
                 ...a,
                 ...editAdminData,
-                role: editAdminData.role as any
+                role: editAdminData.role
               }
             : a
         ));

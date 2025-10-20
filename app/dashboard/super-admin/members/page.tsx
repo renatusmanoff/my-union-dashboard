@@ -4,6 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import DashboardLayout from '@/components/DashboardLayout';
 
+interface Organization {
+  id: string;
+  name: string;
+  type: string;
+}
+
 interface Member {
   id: string;
   lastName: string;
@@ -223,7 +229,7 @@ export default function MembersPage() {
               >
                 <option value="">Все организации</option>
                 {organizations.map(org => (
-                  <option key={org} value={org}>{org}</option>
+                  <option key={org.id} value={org.name}>{org.name}</option>
                 ))}
               </select>
             </div>
@@ -587,7 +593,7 @@ function EditMemberForm({
     email: member.email,
     organizationId: member.organizationId || ''
   });
-  const [organizations, setOrganizations] = useState<any[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(true);
 
   useEffect(() => {

@@ -97,7 +97,7 @@ export async function PUT(
     }
 
     // Обновляем организацию
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       name: name || existingOrganization.name,
       type: type || existingOrganization.type,
       address: address || existingOrganization.address,

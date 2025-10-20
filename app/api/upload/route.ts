@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
           uploadStream.end(buffer);
         });
 
-        const uploadResult = result as any;
+        const uploadResult = result as { secure_url: string };
         publicUrl = uploadResult.secure_url;
         uploadSuccess = true;
 

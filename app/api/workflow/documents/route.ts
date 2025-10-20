@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const statusFilter = searchParams.get('status') as WorkflowDocumentStatus | 'ALL' || 'ALL';
 
     // Получаем документы в зависимости от роли
-    let whereClause: any = {};
+    const whereClause: Record<string, unknown> = {};
 
     if (currentUser.role === 'PRIMARY_CHAIRMAN') {
       whereClause.organizationId = currentUser.organizationId;

@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       lastName: newUser.lastName,
       middleName: newUser.middleName,
       phone: newUser.phone,
-      role: newUser.role as any,
+      role: newUser.role,
       organizationId: newUser.organizationId!,
       organizationName: organizationName || `Организация ${organizationType}`,
       isActive: newUser.isActive,

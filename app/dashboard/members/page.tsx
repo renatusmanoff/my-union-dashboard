@@ -4,6 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@/contexts/UserContext';
 import DashboardLayout from '@/components/DashboardLayout';
 
+interface Organization {
+  id: string;
+  name: string;
+  type: string;
+}
+
 interface Member {
   id: string;
   lastName: string;
@@ -590,7 +596,7 @@ function EditMemberForm({
     email: member.email,
     organizationId: member.organizationId || ''
   });
-  const [organizations, setOrganizations] = useState<any[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(true);
 
   useEffect(() => {
