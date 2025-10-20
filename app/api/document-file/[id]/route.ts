@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fileStorage } from '../../upload/route';
+import { fileStorage } from '@/lib/file-storage';
 
 export async function GET(
   req: NextRequest,

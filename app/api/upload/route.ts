@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { v2 as cloudinary } from 'cloudinary';
+import { fileStorage } from '@/lib/file-storage';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'secret');
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -32,9 +33,6 @@ if (process.env.CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_URL) {
     console.warn('⚠️ Cloudinary configuration error:', error);
   }
 }
-
-// Simple in-memory storage для локальной разработки
-const fileStorage = new Map<string, { data: Buffer; filename: string; type: string; size: number }>();
 
 export async function POST(req: NextRequest) {
   try {
@@ -187,6 +185,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
-// Export the in-memory storage для использования в других endpoints
-export { fileStorage };
