@@ -8,7 +8,7 @@ const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'secret');
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const cookieStore = await cookies();
@@ -24,7 +24,8 @@ export async function POST(
     const body = await req.json();
     const { approved = true, rejectionReason } = body;
 
-    const documentId = params.id;
+    const { id } = await params;
+    const documentId = id;
 
     // Проверяем, что пользователь является участником документа
     const participant = await prisma.documentParticipant.findUnique({

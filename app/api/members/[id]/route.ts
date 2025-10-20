@@ -4,7 +4,7 @@ import { prisma } from '@/lib/database';
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const currentUser = await getCurrentUser();
@@ -15,7 +15,8 @@ export async function DELETE(
       );
     }
 
-    const memberId = params.id;
+    const { id } = await params;
+    const memberId = id;
 
     // Получаем информацию о члене
     const member = await prisma.user.findUnique({
@@ -67,7 +68,7 @@ export async function DELETE(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const currentUser = await getCurrentUser();
@@ -78,7 +79,8 @@ export async function PATCH(
       );
     }
 
-    const memberId = params.id;
+    const { id } = await params;
+    const memberId = id;
     const body = await request.json();
 
     // Получаем информацию о члене

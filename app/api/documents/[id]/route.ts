@@ -8,7 +8,7 @@ const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'secret');
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const cookieStore = await cookies();
@@ -21,7 +21,8 @@ export async function GET(
     const verified = await jwtVerify(token, JWT_SECRET);
     const userId = verified.payload.userId as string;
 
-    const documentId = params.id;
+    const { id } = await params;
+    const documentId = id;
 
     // Получаем документ
     const document = await prisma.workflowDocument.findUnique({
