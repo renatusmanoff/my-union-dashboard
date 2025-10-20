@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
       email: newUser.email,
       firstName: newUser.firstName,
       lastName: newUser.lastName,
-      middleName: newUser.middleName,
+      middleName: newUser.middleName || undefined,
       phone: newUser.phone,
       role: newUser.role,
       organizationId: newUser.organizationId!,
