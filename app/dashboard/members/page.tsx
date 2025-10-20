@@ -232,7 +232,7 @@ export default function MembersPage() {
               >
                 <option value="">Все организации</option>
                 {organizations.map((org) => {
-                  const organization = org as Organization;
+                  const organization = org as unknown as Organization;
                   return (
                     <option key={organization.id} value={organization.name}>{organization.name}</option>
                   );
