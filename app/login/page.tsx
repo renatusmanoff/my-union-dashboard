@@ -41,10 +41,13 @@ function LoginForm() {
       const data = await response.json();
 
       if (response.ok) {
-        // Успешная аутентификация - отправляем событие и перенаправляем
-        if (typeof window !== 'undefined') {
+        // Сохраняем sessionId в localStorage
+        if (typeof window !== 'undefined' && data.sessionId) {
+          localStorage.setItem('session-id', data.sessionId);
+          // Отправляем событие для обновления UserContext
           window.dispatchEvent(new Event('auth-change'));
         }
+        // Перенаправляем на главную страницу
         window.location.href = redirectTo;
       } else {
         setError(data.error || 'Произошла ошибка при входе');

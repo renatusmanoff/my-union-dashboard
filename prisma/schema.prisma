@@ -72,6 +72,9 @@ model User {
   sentNotifications Notification[] @relation("NotificationSender")
   receivedNotifications Notification[] @relation("NotificationRecipient")
 
+  // Сессии
+  sessions Session[]
+
   @@map("users")
 }
 
@@ -423,6 +426,18 @@ model Discount {
   partner         Partner @relation(fields: [partnerId], references: [id])
 
   @@map("discounts")
+}
+
+// Сессии пользователей
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  @@map("sessions")
 }
 
 // Enums

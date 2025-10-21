@@ -1,27 +1,38 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { prisma } from '@/lib/database';
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
-    // Удаляем cookie
+    // Получаем sessionId из cookie или заголовка
     const cookieStore = await cookies();
-    cookieStore.delete('auth-token');
+    let sessionId = cookieStore.get('session-id')?.value;
+
+    if (!sessionId) {
+      const authHeader = request.headers.get('Authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        sessionId = authHeader.substring(7);
+      }
+    }
+
+    // Если есть sessionId, удаляем сессию из БД
+    if (sessionId) {
+      await prisma.session.deleteMany({
+        where: { token: sessionId }
+      });
+    }
+
+    // Удаляем cookie
+    const updatedCookieStore = await cookies();
+    updatedCookieStore.delete('session-id');
 
     return NextResponse.json({
       success: true,
-      message: 'Выход выполнен успешно'
+      message: 'Вы вышли из системы'
     });
-
-  } catch (error) {
-    console.error('Logout error:', error);
-    
-    // Логируем детали ошибки только в development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Logout error details:', error);
-    }
-    
+  } catch {
     return NextResponse.json(
-      { error: 'Внутренняя ошибка сервера' },
+      { error: 'Ошибка при выходе' },
       { status: 500 }
     );
   }

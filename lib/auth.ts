@@ -1,8 +1,6 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { cookies } from 'next/headers';
 import { UserRole } from '@prisma/client';
-import { OrganizationType } from '@/types';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -47,81 +45,6 @@ export function createToken(user: {
 export function verifyToken(token: string): JWTPayload | null {
   try {
     return jwt.verify(token, JWT_SECRET) as JWTPayload;
-  } catch {
-    return null;
-  }
-}
-
-// Функция для получения пользователя из токена
-export async function getCurrentUser(): Promise<{
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  middleName?: string;
-  phone: string;
-  role: UserRole;
-  organizationId: string;
-  organizationName: string;
-  organizationType: OrganizationType;
-  avatar?: string;
-  isActive: boolean;
-  emailVerified: boolean;
-  membershipValidated: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-} | null> {
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('auth-token')?.value;
-
-    if (!token) {
-      return null;
-    }
-
-    const payload = verifyToken(token);
-    if (!payload) {
-      return null;
-    }
-
-    // Получаем данные пользователя из базы данных
-    const { prisma } = await import('@/lib/database');
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-      include: {
-        organization: {
-          select: {
-            id: true,
-            name: true,
-            type: true
-          }
-        }
-      }
-    });
-    
-    if (!user) {
-      return null;
-    }
-
-    // Преобразуем данные пользователя в нужный формат
-    return {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      middleName: user.middleName || undefined,
-      phone: user.phone,
-      role: user.role as UserRole,
-      organizationId: user.organizationId || '',
-      organizationName: user.organization?.name || 'Неизвестная организация',
-      organizationType: user.organization?.type as OrganizationType || 'PRIMARY',
-      avatar: user.avatar || undefined,
-      isActive: user.isActive,
-      emailVerified: user.emailVerified,
-      membershipValidated: user.membershipValidated,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt
-    };
   } catch {
     return null;
   }

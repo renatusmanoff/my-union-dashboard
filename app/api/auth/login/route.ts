@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createToken, verifyPassword } from '@/lib/auth';
+import { verifyPassword } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { UserRole } from '@prisma/client';
 import { OrganizationType } from '@/types';
 import { prisma } from '@/lib/database';
+import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,35 +56,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Генерируем JWT токен
-    const token = createToken({
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      middleName: user.middleName || undefined,
-      phone: user.phone,
-      role: user.role as UserRole,
-      organizationId: user.organizationId || '',
-      organizationName: user.organization?.name || 'Неизвестная организация',
-      organizationType: user.organization?.type as OrganizationType || 'PRIMARY',
-      avatar: user.avatar || undefined,
-      isActive: user.isActive,
-      emailVerified: user.emailVerified,
-      membershipValidated: user.membershipValidated
+    // Генерируем уникальный sessionId
+    const sessionId = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 дней
+
+    // Создаем сессию в БД
+    await prisma.session.create({
+      data: {
+        userId: user.id,
+        token: sessionId,
+        expiresAt
+      }
     });
 
-    // Устанавливаем cookie
+    // Устанавливаем cookie для резервного варианта
     const cookieStore = await cookies();
-    cookieStore.set('auth-token', token, {
+    cookieStore.set('session-id', sessionId, {
       httpOnly: true,
       secure: true,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7 // 7 дней
     });
 
+    // Возвращаем sessionId в response body ПЛЮС в cookie
     return NextResponse.json({
       success: true,
+      sessionId, // Фронт сохранит в localStorage
       user: {
         id: user.id,
         email: user.email,
@@ -92,18 +90,12 @@ export async function POST(request: NextRequest) {
         middleName: user.middleName,
         phone: user.phone,
         role: user.role,
-        organizationId: user.organizationId
+        organizationId: user.organizationId,
+        organizationName: user.organization?.name
       }
     });
 
-  } catch (error) {
-    console.error('Login error:', error);
-    
-    // Логируем детали ошибки только в development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Login error details:', error);
-    }
-    
+  } catch {
     return NextResponse.json(
       { error: 'Внутренняя ошибка сервера' },
       { status: 500 }

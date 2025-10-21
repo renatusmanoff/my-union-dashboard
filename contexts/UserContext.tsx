@@ -24,16 +24,26 @@ export function UserProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       setError(null);
       
-      // Добавляем таймаут для запроса
+      // Получаем sessionId из localStorage
+      const sessionId = typeof window !== 'undefined' ? localStorage.getItem('session-id') : null;
+      
+      if (!sessionId) {
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
+      // Таймаут для запроса
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 секунд таймаут
       
       const response = await fetch('/api/auth/me', {
-        credentials: 'include', // Включаем cookies
+        credentials: 'include', // Отправляем cookies
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionId}` // Отправляем sessionId в заголовке
         },
-        cache: 'no-store', // Отключаем кеширование
+        cache: 'no-store',
         signal: controller.signal
       });
       
@@ -42,6 +52,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
       if (!response.ok) {
         setError('Ошибка авторизации');
         setUser(null);
+        // Очищаем sessionId если он невалидный
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('session-id');
+        }
         return;
       }
 
@@ -61,7 +75,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         try {
           const parsedUser = JSON.parse(tempUserRaw);
           setUser(parsedUser);
-        } catch (e) {
+        } catch {
           sessionStorage.removeItem('tempUser');
           setUser(realUser);
         }
@@ -83,25 +97,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null);
     setError(null);
-    cache.clear(); // Clear all cached data
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('session-id');
+    }
+    cache.clear();
   };
 
   useEffect(() => {
-    // Принудительно очищаем кеш браузера при загрузке
     if (typeof window !== 'undefined') {
-      // Очищаем sessionStorage
-      sessionStorage.removeItem('tempUser');
-      
-      // Очищаем localStorage
-      localStorage.removeItem('user');
-      localStorage.removeItem('auth-token');
-      
-      // Очищаем кеш для /api/auth/me
-      const cacheKey = `/api/auth/me`;
-      if ((window as any).__cache) {
-        delete (window as any).__cache[cacheKey];
-      }
-
       // Добавляем слушатель для обновления при изменении авторизации
       const handleAuthChange = () => {
         fetchUser();
@@ -109,12 +112,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
       window.addEventListener('auth-change', handleAuthChange);
       
+      fetchUser();
+      
       return () => {
         window.removeEventListener('auth-change', handleAuthChange);
       };
     }
-    
-    fetchUser();
   }, []);
 
   return (
