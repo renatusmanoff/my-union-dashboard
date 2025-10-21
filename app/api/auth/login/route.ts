@@ -77,8 +77,8 @@ export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
     cookieStore.set('auth-token', token, {
       httpOnly: true,
-      secure: true, // Enable secure for HTTPS
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'none', // Required when using https with proxies
       maxAge: 60 * 60 * 24 * 7 // 7 дней
     });
 
