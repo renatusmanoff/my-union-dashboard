@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 
 export default function FederalAdminDashboard() {
   const { user, isLoading } = useUser();
-  const [statistics, setStatistics] = useState({
+  const [statistics] = useState({
     members: 0,
     applications: 0,
     tasks: 0,

@@ -234,6 +234,7 @@ export default function RegisterPage() {
   };
 
   const addSpecialty = () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     setNewMemberData(prev => ({
       ...prev,
       specialties: [...(prev.specialties || []), '']
@@ -241,6 +242,7 @@ export default function RegisterPage() {
   };
 
   const addPosition = () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     setNewMemberData(prev => ({
       ...prev,
       positions: [...(prev.positions || []), '']
@@ -248,6 +250,7 @@ export default function RegisterPage() {
   };
 
   const addChild = () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     setNewMemberData(prev => ({
       ...prev,
       children: [...(prev.children || []), { name: '', dateOfBirth: new Date() }]

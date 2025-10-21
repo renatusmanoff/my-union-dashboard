@@ -53,7 +53,7 @@ function RegistrationDocumentsContent() {
       } else {
         setError('Заявление не найдено');
       }
-    } catch (err) {
+    } catch {
       setError('Ошибка при загрузке заявления');
     } finally {
       setIsLoading(false);
@@ -74,7 +74,7 @@ function RegistrationDocumentsContent() {
       } else {
         setError('Ошибка при сохранении');
       }
-    } catch (err) {
+    } catch {
       setError('Ошибка при сохранении');
     } finally {
       setIsSigningLater(false);

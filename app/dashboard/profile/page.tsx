@@ -5,7 +5,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { User } from '@/types';
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({

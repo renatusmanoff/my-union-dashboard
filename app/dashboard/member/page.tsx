@@ -13,7 +13,7 @@ interface MembershipStatus {
 export default function MemberDashboard() {
   const { user, isLoading } = useUser();
   const [memberStatus, setMemberStatus] = useState<MembershipStatus | null>(null);
-  const [statusLoading, setStatusLoading] = useState(true);
+  const [statusLoading] = useState(true);
 
   useEffect(() => {
     const fetchMembershipStatus = async () => {

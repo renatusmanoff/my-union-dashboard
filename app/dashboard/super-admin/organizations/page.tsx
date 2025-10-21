@@ -62,7 +62,7 @@ export default function OrganizationsPage() {
   const [activeTab, setActiveTab] = useState<'organizations' | 'admins'>('organizations');
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [admins, setAdmins] = useState<AdminUser[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
   const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null);
@@ -118,7 +118,7 @@ export default function OrganizationsPage() {
       } else {
         return null;
       }
-    } catch (error) {
+    } catch {
       return null;
     } finally {
       setSearchingINN(false);
@@ -139,7 +139,7 @@ export default function OrganizationsPage() {
         setOrganizations(data.organizations);
       } else {
       }
-    } catch (error) {
+    } catch {
     } finally {
       setIsLoading(false);
     }
@@ -159,7 +159,7 @@ export default function OrganizationsPage() {
         setAdmins(data.admins);
       } else {
       }
-    } catch (error) {
+    } catch {
     }
   }, []);
 
@@ -270,7 +270,7 @@ export default function OrganizationsPage() {
         console.error('Organization creation failed:', orgData);
         console.log(orgData.error || 'Ошибка при создании организации');
       }
-    } catch (error) {
+    } catch {
       console.error('Error creating organization or admin:', error);
       console.log('Ошибка при создании организации или администратора');
     }
@@ -345,7 +345,7 @@ export default function OrganizationsPage() {
       } else {
         console.log(data.error || 'Ошибка при удалении организации');
       }
-    } catch (error) {
+    } catch {
       console.error('Error deleting organization:', error);
       console.log('Ошибка при удалении организации');
     }
@@ -376,7 +376,7 @@ export default function OrganizationsPage() {
       } else {
         console.log(data.error || 'Ошибка при обновлении организации');
       }
-    } catch (error) {
+    } catch {
       console.error('Error updating organization:', error);
       console.log('Ошибка при обновлении организации');
     }
@@ -458,7 +458,7 @@ export default function OrganizationsPage() {
       } else {
         console.log(data.error || 'Ошибка при удалении администратора');
       }
-    } catch (error) {
+    } catch {
       console.error('Error deleting admin:', error);
       console.log('Ошибка при удалении администратора');
     }
@@ -507,7 +507,7 @@ export default function OrganizationsPage() {
       } else {
         console.log(data.error || 'Ошибка при обновлении администратора');
       }
-    } catch (error) {
+    } catch {
       console.error('Error updating admin:', error);
       console.log('Ошибка при обновлении администратора');
     }

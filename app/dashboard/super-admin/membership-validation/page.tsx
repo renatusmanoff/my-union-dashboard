@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useUser } from '@/contexts/UserContext';
-import { UserRole, ApplicationStatus } from '@prisma/client';
+import { ApplicationStatus } from '@prisma/client';
 
 interface MembershipApplication {
   id: string;
