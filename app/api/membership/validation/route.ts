@@ -29,36 +29,40 @@ export async function GET(_request: NextRequest) {
       whereClause.organizationId = currentUser.organizationId;
     } else if (currentUser.role === 'LOCAL_CHAIRMAN') {
       // Местный председатель видит заявления всех первичных организаций под своим управлением
-      const localOrg = await prisma.organization.findUnique({
-        where: { id: currentUser.organizationId },
-        include: { children: true }
-      });
-      
-      if (localOrg?.children) {
-        whereClause.organizationId = {
-          in: localOrg.children.map(child => child.id)
-        };
+      if (currentUser.organizationId) {
+        const localOrg = await prisma.organization.findUnique({
+          where: { id: currentUser.organizationId },
+          include: { children: true }
+        });
+        
+        if (localOrg?.children) {
+          whereClause.organizationId = {
+            in: localOrg.children.map(child => child.id)
+          };
+        }
       }
     } else if (currentUser.role === 'REGIONAL_CHAIRMAN') {
       // Региональный председатель видит заявления всех организаций в регионе
-      const regionalOrg = await prisma.organization.findUnique({
-        where: { id: currentUser.organizationId },
-        include: { 
-          children: {
-            include: { children: true }
+      if (currentUser.organizationId) {
+        const regionalOrg = await prisma.organization.findUnique({
+          where: { id: currentUser.organizationId },
+          include: { 
+            children: {
+              include: { children: true }
+            }
           }
-        }
-      });
-      
-      if (regionalOrg?.children) {
-        const allChildIds = regionalOrg.children.flatMap(child => [
-          child.id,
-          ...child.children.map(grandChild => grandChild.id)
-        ]);
+        });
         
-        whereClause.organizationId = {
-          in: allChildIds
-        };
+        if (regionalOrg?.children) {
+          const allChildIds = regionalOrg.children.flatMap(child => [
+            child.id,
+            ...child.children.map(grandChild => grandChild.id)
+          ]);
+          
+          whereClause.organizationId = {
+            in: allChildIds
+          };
+        }
       }
     } else if (currentUser.role === 'FEDERAL_CHAIRMAN') {
       // Федеральный председатель видит все заявления
