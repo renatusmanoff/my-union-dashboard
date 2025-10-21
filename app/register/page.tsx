@@ -146,6 +146,9 @@ export default function RegisterPage() {
           },
           body: JSON.stringify({
             ...newMemberData,
+            dateOfBirth: newMemberData.dateOfBirth instanceof Date 
+              ? newMemberData.dateOfBirth.toISOString().split('T')[0] 
+              : newMemberData.dateOfBirth,
             organizationId: searchData.organizationId,
             userId: registerData.user.id
           }),

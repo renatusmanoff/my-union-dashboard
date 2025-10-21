@@ -6,6 +6,8 @@ import { getCurrentUser } from '@/lib/auth';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('🔍 [DEBUG] Registration request body:', body);
+    
     const {
       firstName,
       lastName,
@@ -21,8 +23,33 @@ export async function POST(request: NextRequest) {
 
     // Валидация обязательных полей
     if (!firstName || !lastName || !gender || !dateOfBirth || !phone || !organizationId || !address) {
+      console.log('🔍 [DEBUG] Missing required fields');
       return NextResponse.json(
         { error: "Все обязательные поля должны быть заполнены" },
+        { status: 400 }
+      );
+    }
+
+    // Исправляем формат даты
+    let parsedDateOfBirth;
+    try {
+      // Если дата в формате DD.MM.YYYY, конвертируем в ISO
+      if (typeof dateOfBirth === 'string' && dateOfBirth.includes('.')) {
+        const [day, month, year] = dateOfBirth.split('.');
+        parsedDateOfBirth = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+      } else {
+        parsedDateOfBirth = new Date(dateOfBirth);
+      }
+      
+      if (isNaN(parsedDateOfBirth.getTime())) {
+        throw new Error('Invalid date format');
+      }
+      
+      console.log('🔍 [DEBUG] Parsed date:', parsedDateOfBirth);
+    } catch (error) {
+      console.log('🔍 [DEBUG] Date parsing error:', error);
+      return NextResponse.json(
+        { error: "Неверный формат даты рождения" },
         { status: 400 }
       );
     }
@@ -59,7 +86,7 @@ export async function POST(request: NextRequest) {
         lastName,
         middleName: middleName || undefined,
         gender,
-        dateOfBirth: new Date(dateOfBirth),
+        dateOfBirth: parsedDateOfBirth,
         phone,
         address: JSON.stringify(address),
         organizationId,
@@ -109,11 +136,20 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error("🔍 [DEBUG] Registration error:", error);
+    
+    // Логируем детали ошибки для отладки
+    if (error instanceof Error) {
+      console.error("🔍 [DEBUG] Error message:", error.message);
+      console.error("🔍 [DEBUG] Error stack:", error.stack);
+    }
+    
     return NextResponse.json(
       { 
         error: "Ошибка при регистрации",
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: process.env.NODE_ENV === 'development' 
+          ? (error instanceof Error ? error.message : 'Unknown error')
+          : 'Внутренняя ошибка сервера'
       },
       { status: 500 }
     );
