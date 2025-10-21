@@ -13,6 +13,7 @@ async function testValidationSystem() {
         middleName: 'Тестович',
         phone: '+7 (999) 123-45-67',
         dateOfBirth: new Date('1990-01-01'),
+        gender: 'MALE' as const,
         address: JSON.stringify({
           city: 'Москва',
           street: 'ул. Тестовая, д. 1'
