@@ -454,7 +454,7 @@ export default function OrganizationsPage() {
           console.log('  Updating organization to remove chairman');
           setOrganizations(organizations.map(org => 
             org.id === admin.organizationId 
-              ? { ...org, chairmanName: null, chairmanId: null }
+              ? { ...org, chairmanName: undefined, chairmanId: undefined }
               : org
           ));
         }
