@@ -100,3 +100,74 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: 'Пользователь не авторизован' },
+        { status: 401 }
+      );
+    }
+
+    // Проверяем права доступа
+    if (currentUser.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { error: 'Недостаточно прав для удаления организации' },
+        { status: 403 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const organizationId = searchParams.get('id');
+
+    if (!organizationId) {
+      return NextResponse.json(
+        { error: 'ID организации не указан' },
+        { status: 400 }
+      );
+    }
+
+    // Проверяем, существует ли организация
+    const organization = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      include: {
+        users: true,
+        children: true
+      }
+    });
+
+    if (!organization) {
+      return NextResponse.json(
+        { error: 'Организация не найдена' },
+        { status: 404 }
+      );
+    }
+
+    // Проверяем, есть ли дочерние организации
+    if (organization.children.length > 0) {
+      return NextResponse.json(
+        { error: 'Нельзя удалить организацию, у которой есть дочерние организации' },
+        { status: 400 }
+      );
+    }
+
+    // Удаляем организацию (каскадное удаление пользователей произойдет автоматически)
+    await prisma.organization.delete({
+      where: { id: organizationId }
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Организация успешно удалена'
+    });
+
+  } catch (error) {
+    console.error('Delete organization error:', error);
+    return NextResponse.json(
+      { error: 'Внутренняя ошибка сервера' },
+      { status: 500 }
+    );
+  }
+}

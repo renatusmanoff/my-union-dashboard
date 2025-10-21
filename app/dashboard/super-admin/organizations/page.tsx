@@ -404,7 +404,7 @@ export default function OrganizationsPage() {
   };
 
   // Функции для работы с администраторами
-  const handleEditAdmin = (admin: AdminUser) => {
+  const handleEditAdmin = useCallback((admin: AdminUser) => {
     setEditingAdmin(admin);
     setEditAdminData({
       email: admin.email,
@@ -417,9 +417,9 @@ export default function OrganizationsPage() {
       generateNewPassword: false
     });
     setShowEditAdminForm(true);
-  };
+  }, []);
 
-  const handleDeleteAdmin = async (admin: AdminUser) => {
+  const handleDeleteAdmin = useCallback(async (admin: AdminUser) => {
     const confirmed = window.confirm(`Вы уверены, что хотите удалить администратора "${admin.firstName} ${admin.lastName}"?`);
     if (!confirmed) {
       return;
@@ -455,7 +455,7 @@ export default function OrganizationsPage() {
     } catch (error) {
       alert('Произошла ошибка при удалении администратора');
     }
-  };
+  }, []);
 
   const handleUpdateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -618,10 +618,21 @@ export default function OrganizationsPage() {
 
           {/* Create/Edit Form */}
           {showCreateForm && (
-            <div className="bg-gray-800 rounded-lg shadow-sm border border-gray-700 p-6 mb-6">
-              <h3 className="text-lg font-semibold text-white mb-4">
-                {editingOrg ? 'Редактировать организацию' : 'Создать новую организацию'}
-              </h3>
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-semibold text-white">
+                    {editingOrg ? 'Редактировать организацию' : 'Создать новую организацию'}
+                  </h3>
+                  <button
+                    onClick={cancelEdit}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               <form onSubmit={editingOrg ? handleUpdateOrganization : handleCreateOrganization} className="space-y-6">
                 {/* Organization Data */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -822,124 +833,156 @@ export default function OrganizationsPage() {
                   </button>
                 </div>
               </form>
+              </div>
             </div>
           )}
 
-          {/* Форма редактирования администратора */}
+          {/* Модальное окно редактирования администратора */}
           {showEditAdminForm && (
-            <div className="card p-6 rounded-lg">
-              <h3 className="text-lg font-semibold mb-4">
-                Редактировать администратора
-              </h3>
-              <form onSubmit={handleUpdateAdmin} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Email *</label>
-                    <input
-                      type="email"
-                      required
-                      value={editAdminData.email}
-                      onChange={(e) => setEditAdminData({ ...editAdminData, email: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Телефон *</label>
-                    <input
-                      type="tel"
-                      required
-                      value={editAdminData.phone}
-                      onChange={(e) => setEditAdminData({ ...editAdminData, phone: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Имя *</label>
-                    <input
-                      type="text"
-                      required
-                      value={editAdminData.firstName}
-                      onChange={(e) => setEditAdminData({ ...editAdminData, firstName: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Фамилия *</label>
-                    <input
-                      type="text"
-                      required
-                      value={editAdminData.lastName}
-                      onChange={(e) => setEditAdminData({ ...editAdminData, lastName: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Отчество</label>
-                    <input
-                      type="text"
-                      value={editAdminData.middleName}
-                      onChange={(e) => setEditAdminData({ ...editAdminData, middleName: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Роль *</label>
-                    <select
-                      required
-                      value={editAdminData.role}
-                      onChange={(e) => setEditAdminData({ ...editAdminData, role: e.target.value as UserRole })}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="FEDERAL_CHAIRMAN">{getRoleLabel('FEDERAL_CHAIRMAN')}</option>
-                      <option value="REGIONAL_CHAIRMAN">{getRoleLabel('REGIONAL_CHAIRMAN')}</option>
-                      <option value="LOCAL_CHAIRMAN">{getRoleLabel('LOCAL_CHAIRMAN')}</option>
-                      <option value="PRIMARY_CHAIRMAN">{getRoleLabel('PRIMARY_CHAIRMAN')}</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Организация *</label>
-                    <select
-                      required
-                      value={editAdminData.organizationId}
-                      onChange={(e) => setEditAdminData({ ...editAdminData, organizationId: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      {organizations.map((org) => (
-                        <option key={org.id} value={org.id}>
-                          {org.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="flex items-center space-x-2">
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-semibold text-white">
+                    Редактировать администратора
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setShowEditAdminForm(false);
+                      setEditingAdmin(null);
+                    }}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <form onSubmit={handleUpdateAdmin} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Email *</label>
                       <input
-                        type="checkbox"
-                        checked={editAdminData.generateNewPassword}
-                        onChange={(e) => setEditAdminData({ ...editAdminData, generateNewPassword: e.target.checked })}
-                        className="rounded"
+                        type="email"
+                        required
+                        value={editAdminData.email}
+                        onChange={(e) => setEditAdminData({ ...editAdminData, email: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
-                      <span className="text-sm font-medium">Сгенерировать новый пароль и отправить на email</span>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Телефон *</label>
+                      <input
+                        type="tel"
+                        required
+                        value={editAdminData.phone}
+                        onChange={(e) => setEditAdminData({ ...editAdminData, phone: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Имя *</label>
+                      <input
+                        type="text"
+                        required
+                        value={editAdminData.firstName}
+                        onChange={(e) => setEditAdminData({ ...editAdminData, firstName: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Фамилия *</label>
+                      <input
+                        type="text"
+                        required
+                        value={editAdminData.lastName}
+                        onChange={(e) => setEditAdminData({ ...editAdminData, lastName: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Отчество</label>
+                      <input
+                        type="text"
+                        value={editAdminData.middleName}
+                        onChange={(e) => setEditAdminData({ ...editAdminData, middleName: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Роль *</label>
+                      <select
+                        required
+                        value={editAdminData.role}
+                        onChange={(e) => setEditAdminData({ ...editAdminData, role: e.target.value as UserRole })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        {editingAdmin && (() => {
+                          const org = organizations.find(o => o.id === editingAdmin.organizationId);
+                          return getRolesByOrganizationType(org?.type || 'FEDERAL').map(roleConfig => (
+                            <option key={roleConfig.role} value={roleConfig.role}>
+                              {roleConfig.label}
+                            </option>
+                          ));
+                        })()}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Организация *</label>
+                      <select
+                        required
+                        value={editAdminData.organizationId}
+                        onChange={(e) => setEditAdminData({ ...editAdminData, organizationId: e.target.value })}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        {organizations.map((org) => (
+                          <option key={org.id} value={org.id}>
+                            {org.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="generateNewPassword"
+                      checked={editAdminData.generateNewPassword}
+                      onChange={(e) => setEditAdminData({ ...editAdminData, generateNewPassword: e.target.checked })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded"
+                    />
+                    <label htmlFor="generateNewPassword" className="ml-2 block text-sm text-gray-300">
+                      Сгенерировать новый пароль и отправить на email
                     </label>
                   </div>
-                </div>
 
-                <div className="flex space-x-3">
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Сохранить изменения
-                  </button>
-                  <button
-                    type="button"
-                    onClick={cancelEditAdmin}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                  >
-                    Отмена
-                  </button>
-                </div>
-              </form>
+                  <div className="flex justify-end space-x-3 pt-4 border-t border-gray-700">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowEditAdminForm(false);
+                        setEditingAdmin(null);
+                      }}
+                      className="px-4 py-2 text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                    >
+                      Отмена
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                    >
+                      Сохранить изменения
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           )}
 
