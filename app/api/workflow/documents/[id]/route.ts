@@ -80,13 +80,13 @@ export async function GET(
       hasPermission = document.organizationId === currentUser.organizationId;
     } else if (currentUser.role === 'LOCAL_CHAIRMAN') {
       const localOrg = await prisma.organization.findUnique({
-        where: { id: currentUser.organizationId },
+        where: { id: currentUser.organizationId! },
         include: { children: true }
       });
       hasPermission = localOrg?.children.some(child => child.id === document.organizationId) || false;
     } else if (currentUser.role === 'REGIONAL_CHAIRMAN') {
       const regionalOrg = await prisma.organization.findUnique({
-        where: { id: currentUser.organizationId },
+        where: { id: currentUser.organizationId! },
         include: { 
           children: {
             include: { children: true }
@@ -162,13 +162,13 @@ export async function PATCH(
       hasPermission = document.organizationId === currentUser.organizationId;
     } else if (currentUser.role === 'LOCAL_CHAIRMAN') {
       const localOrg = await prisma.organization.findUnique({
-        where: { id: currentUser.organizationId },
+        where: { id: currentUser.organizationId! },
         include: { children: true }
       });
       hasPermission = localOrg?.children.some(child => child.id === document.organizationId) || false;
     } else if (currentUser.role === 'REGIONAL_CHAIRMAN') {
       const regionalOrg = await prisma.organization.findUnique({
-        where: { id: currentUser.organizationId },
+        where: { id: currentUser.organizationId! },
         include: { 
           children: {
             include: { children: true }
@@ -347,13 +347,13 @@ export async function DELETE(
       hasPermission = document.organizationId === currentUser.organizationId && document.creatorId === currentUser.id;
     } else if (currentUser.role === 'LOCAL_CHAIRMAN') {
       const localOrg = await prisma.organization.findUnique({
-        where: { id: currentUser.organizationId },
+        where: { id: currentUser.organizationId! },
         include: { children: true }
       });
       hasPermission = (localOrg?.children.some(child => child.id === document.organizationId) || false) && document.creatorId === currentUser.id;
     } else if (currentUser.role === 'REGIONAL_CHAIRMAN') {
       const regionalOrg = await prisma.organization.findUnique({
-        where: { id: currentUser.organizationId },
+        where: { id: currentUser.organizationId! },
         include: { 
           children: {
             include: { children: true }
