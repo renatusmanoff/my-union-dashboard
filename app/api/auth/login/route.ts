@@ -95,7 +95,8 @@ export async function POST(request: NextRequest) {
       }
     });
 
-  } catch {
+  } catch (error) {
+    console.error('Login error:', error);
     return NextResponse.json(
       { error: 'Внутренняя ошибка сервера' },
       { status: 500 }
