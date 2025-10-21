@@ -855,7 +855,7 @@ function generateProtocolMeetingHTML(data: WorkflowDocumentData): string {
       
       <div class="content">
         <p><strong>Повестка дня:</strong></p>
-        ${data.content || '<p>Содержание протокола будет добавлено позже.</p>'}
+        ${data.document.content || '<p>Содержание протокола будет добавлено позже.</p>'}
       </div>
       
       <div class="signatures">
@@ -873,68 +873,63 @@ function generateProtocolMeetingHTML(data: WorkflowDocumentData): string {
 
 // Генерация HTML для повестки дня
 function generateAgendaHTML(data: WorkflowDocumentData): string {
-  const currentDate = new Date().toLocaleDateString('ru-RU');
-  
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="UTF-8">
-      <title>Повестка дня</title>
-      <style>
-        body { font-family: 'Times New Roman', serif; margin: 40px; line-height: 1.6; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .title { font-size: 16px; font-weight: bold; margin-bottom: 20px; }
-        .info { margin-bottom: 20px; }
-        .agenda-items { margin-bottom: 20px; }
-        .agenda-item { margin-bottom: 15px; padding: 10px; border-left: 3px solid #007bff; }
-        .signatures { margin-top: 40px; }
-        .signature-line { margin-bottom: 20px; }
-        .signature-line span { display: inline-block; width: 200px; border-bottom: 1px solid #000; margin-right: 20px; }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <div class="title">ПОВЕСТКА ДНЯ</div>
-        <div>${data.organization.name}</div>
+  const html = `
+  <!DOCTYPE html>
+  <html lang="ru">
+  <head>
+    <meta charset="UTF-8">
+    <title>${data.document.title}</title>
+    ${getCommonStyles()}
+  </head>
+  <body>
+    <div class="header">
+      <h1>ПОВЕСТКА ДНЯ</h1>
+      <p class="org-name">${data.organization.name}</p>
+    </div>
+    
+    <div class="info-section">
+      <div class="info-row">
+        <strong>Дата заседания:</strong> ${new Date(data.document.createdAt).toLocaleDateString('ru-RU')}
       </div>
-      
-      <div class="info">
-        <p><strong>Дата проведения:</strong> ${currentDate}</p>
-        <p><strong>Время:</strong> _______________</p>
-        <p><strong>Место проведения:</strong> ${data.organization.address || 'Не указано'}</p>
-        <p><strong>Председатель:</strong> ${data.creator.firstName} ${data.creator.lastName} ${data.creator.middleName || ''}</p>
+      <div class="info-row">
+        <strong>Место:</strong> ${data.organization.address || 'Не указано'}
       </div>
-      
-      <div class="agenda-items">
-        <p><strong>Вопросы для обсуждения:</strong></p>
-        ${data.content || `
-          <div class="agenda-item">
-            <strong>1.</strong> Организационные вопросы
-          </div>
-          <div class="agenda-item">
-            <strong>2.</strong> Отчет о работе профсоюзной организации
-          </div>
-          <div class="agenda-item">
-            <strong>3.</strong> Планы на следующий период
-          </div>
-          <div class="agenda-item">
-            <strong>4.</strong> Разное
-          </div>
-        `}
+      <div class="info-row">
+        <strong>Председатель:</strong> ${data.creator.firstName} ${data.creator.lastName} ${data.creator.middleName || ''}
       </div>
-      
-      <div class="signatures">
-        <div class="signature-line">
-          <strong>Председатель:</strong> <span></span> ${data.creator.firstName} ${data.creator.lastName}
+    </div>
+    
+    <div class="agenda-items">
+      <p><strong>Вопросы для обсуждения:</strong></p>
+      ${data.document.content || `
+        <div class="agenda-item">
+          <strong>1.</strong> Организационные вопросы
         </div>
-        <div class="signature-line">
-          <strong>Секретарь:</strong> <span></span> _________________
+        <div class="agenda-item">
+          <strong>2.</strong> Отчет о работе профсоюзной организации
         </div>
+        <div class="agenda-item">
+          <strong>3.</strong> Планы на следующий период
+        </div>
+        <div class="agenda-item">
+          <strong>4.</strong> Разное
+        </div>
+      `}
+    </div>
+    
+    <div class="signatures">
+      <div class="signature-line">
+        <strong>Председатель:</strong> <span></span> ${data.creator.firstName} ${data.creator.lastName}
       </div>
-    </body>
-    </html>
+      <div class="signature-line">
+        <strong>Секретарь:</strong> <span></span> _________________
+      </div>
+    </div>
+  </body>
+  </html>
   `;
+
+  return html;
 }
 
 // Генерация HTML для постановления
@@ -972,7 +967,7 @@ function generateResolutionHTML(data: WorkflowDocumentData): string {
       
       <div class="resolution-content">
         <p><strong>Рассмотрев вопрос о:</strong></p>
-        ${data.content || `
+        ${data.document.content || `
           <div class="resolution-item">
             <strong>1.</strong> Установить размер членских взносов на 2026 год в размере 1% от заработной платы
           </div>
@@ -1035,7 +1030,7 @@ function generateMeetingConductHTML(data: WorkflowDocumentData): string {
       
       <div class="conduct-content">
         <p><strong>Ход заседания:</strong></p>
-        ${data.content || `
+        ${data.document.content || `
           <div class="conduct-item">
             <strong>1.</strong> Открытие заседания. Проверка кворума.
           </div>
