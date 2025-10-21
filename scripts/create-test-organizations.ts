@@ -189,7 +189,7 @@ async function createTestOrganizations() {
         middleName: 'Тестович',
         phone: '+7 (495) 111-11-11',
         dateOfBirth: new Date('1985-05-15'),
-        gender: 'MALE',
+        gender: 'MALE' as const,
         address: JSON.stringify({
           city: 'Москва',
           street: 'ул. Новая, д. 1'
@@ -201,7 +201,7 @@ async function createTestOrganizations() {
         middleName: 'Кандидат',
         phone: '+7 (495) 222-22-22',
         dateOfBirth: new Date('1990-08-20'),
-        gender: 'FEMALE',
+        gender: 'FEMALE' as const,
         address: JSON.stringify({
           city: 'Москва',
           street: 'ул. Кандидатская, д. 2'
