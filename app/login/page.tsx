@@ -17,8 +17,8 @@ function LoginForm() {
   }, [searchParams]);
 
   const [formData, setFormData] = useState({
-    email: process.env.NODE_ENV === 'development' ? 'admin@myunion.pro' : '',
-    password: process.env.NODE_ENV === 'development' ? 'admin123!' : ''
+    email: process.env.NODE_ENV === 'development' ? 'support@myunion.pro' : '',
+    password: process.env.NODE_ENV === 'development' ? '123321ZxQ@*' : ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -40,8 +40,11 @@ function LoginForm() {
       const data = await response.json();
 
       if (response.ok) {
-        // Успешная аутентификация - перенаправляем на исходную страницу или дашборд
-        router.push(redirectTo);
+        // Успешная аутентификация - отправляем событие и перенаправляем
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('auth-change'));
+        }
+        window.location.href = redirectTo;
       } else {
         setError(data.error || 'Произошла ошибка при входе');
       }

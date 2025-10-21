@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
     cookieStore.set('auth-token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Отключаем secure для продакшена без HTTPS
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7 // 7 дней
     });

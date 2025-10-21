@@ -33,18 +33,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
         cache: 'no-store', // Отключаем кеширование
       });
       
-      console.log('UserContext: API response status:', response.status);
-      console.log('UserContext: Response headers:', Object.fromEntries(response.headers.entries()));
-      
       if (!response.ok) {
-        console.error('UserContext: API error:', response.status, response.statusText);
         setError('Ошибка авторизации');
         setUser(null);
         return;
       }
 
       const data = await response.json();
-      console.log('UserContext: API data:', data);
       
       if (!data.success) {
         setError(data.error || 'Ошибка загрузки пользователя');
@@ -53,27 +48,22 @@ export function UserProvider({ children }: { children: ReactNode }) {
       }
 
       const realUser = data.user;
-      console.log('UserContext: Real user:', realUser);
 
       // Разрешаем временное переключение роли только супер-администратору
       const tempUserRaw = typeof window !== 'undefined' ? sessionStorage.getItem('tempUser') : null;
       if (tempUserRaw && realUser?.role === 'SUPER_ADMIN') {
         try {
           const parsedUser = JSON.parse(tempUserRaw);
-          console.log('UserContext: Using temp user:', parsedUser);
           setUser(parsedUser);
         } catch (e) {
-          console.error('Error parsing temp user:', e);
           sessionStorage.removeItem('tempUser');
           setUser(realUser);
         }
       } else {
         if (tempUserRaw) sessionStorage.removeItem('tempUser');
-        console.log('UserContext: Setting real user:', realUser);
         setUser(realUser);
       }
     } catch (error) {
-      console.error('Error fetching user:', error);
       setError('Ошибка загрузки пользователя');
     } finally {
       setIsLoading(false);
@@ -101,6 +91,17 @@ export function UserProvider({ children }: { children: ReactNode }) {
       if ((window as any).__cache) {
         delete (window as any).__cache[cacheKey];
       }
+
+      // Добавляем слушатель для обновления при изменении авторизации
+      const handleAuthChange = () => {
+        fetchUser();
+      };
+
+      window.addEventListener('auth-change', handleAuthChange);
+      
+      return () => {
+        window.removeEventListener('auth-change', handleAuthChange);
+      };
     }
     
     fetchUser();
