@@ -67,17 +67,17 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 bg-primary-600 rounded-lg flex items-center justify-center">
+          <div className="mx-auto h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-lg">МС</span>
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900 dark:text-white">
+          <h2 className="mt-6 text-3xl font-bold text-white">
             Вход в систему
           </h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-sm text-gray-300">
             MyUnion Dashboard для профсоюзных организаций
           </p>
         </div>
@@ -86,7 +86,7 @@ function LoginForm() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300">
                 Email адрес
               </label>
               <input
@@ -97,13 +97,13 @@ function LoginForm() {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-600 placeholder-gray-400 text-white bg-gray-700 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
                 placeholder="Введите ваш email"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300">
                 Пароль
               </label>
               <input
@@ -114,7 +114,7 @@ function LoginForm() {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-700 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-600 placeholder-gray-400 text-white bg-gray-700 rounded-lg focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
                 placeholder="Введите ваш пароль"
               />
             </div>
@@ -122,7 +122,7 @@ function LoginForm() {
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <div className="bg-red-900/20 border border-red-800 rounded-lg p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
                   <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -130,7 +130,7 @@ function LoginForm() {
                   </svg>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
+                  <p className="text-sm text-red-200">{error}</p>
                 </div>
               </div>
             </div>
@@ -143,9 +143,9 @@ function LoginForm() {
                 id="remember-me"
                 name="remember-me"
                 type="checkbox"
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 dark:border-gray-600 rounded"
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-600 rounded"
               />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-300">
                 Запомнить меня
               </label>
             </div>
@@ -153,7 +153,7 @@ function LoginForm() {
             <div className="text-sm">
               <Link
                 href="/forgot-password"
-                className="font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
+                className="font-medium text-blue-400 hover:text-blue-300"
               >
                 Забыли пароль?
               </Link>
@@ -165,7 +165,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isLoading ? (
                 <div className="flex items-center">
@@ -183,30 +183,17 @@ function LoginForm() {
 
           {/* Register Link */}
           <div className="text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-gray-400">
               Нет аккаунта?{' '}
               <Link
                 href="/register"
-                className="font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
+                className="font-medium text-blue-400 hover:text-blue-300"
               >
                 Зарегистрироваться
               </Link>
             </p>
           </div>
         </form>
-
-        {/* Development Credentials - Remove in production */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
-              Демо-доступ (только для разработки):
-            </h3>
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              Email: admin@myunion.pro<br />
-              Пароль: admin123!
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

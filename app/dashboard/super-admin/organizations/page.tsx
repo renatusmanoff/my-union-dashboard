@@ -164,7 +164,7 @@ export default function OrganizationsPage() {
   useEffect(() => {
     fetchOrganizations();
     fetchAdmins();
-  }, []);
+  }, [fetchOrganizations, fetchAdmins]);
 
   // Обновляем роль по умолчанию при изменении типа организации
   useEffect(() => {
@@ -237,8 +237,8 @@ export default function OrganizationsPage() {
           
           // Очищаем кеш организаций
           cache.clear();
-          setOrganizations([...organizations, updatedOrg]);
-          setAdmins([...admins, adminData.admin]);
+          setOrganizations(prevOrgs => [...prevOrgs, updatedOrg]);
+          setAdmins(prevAdmins => [...prevAdmins, adminData.admin]);
           setShowCreateForm(false);
           setFormData({
             name: '',
@@ -305,7 +305,8 @@ export default function OrganizationsPage() {
   };
 
   const handleDeleteOrganization = async (organization: Organization) => {
-    if (!confirm(`Вы уверены, что хотите удалить организацию "${organization.name}"?`)) {
+    const confirmed = window.confirm(`Вы уверены, что хотите удалить организацию "${organization.name}"?`);
+    if (!confirmed) {
       return;
     }
 
@@ -338,7 +339,7 @@ export default function OrganizationsPage() {
         console.log('Организация успешно удалена');
         // Очищаем кеш организаций перед обновлением
         cache.clear();
-        setOrganizations(organizations.filter(org => org.id !== organization.id));
+        setOrganizations(prevOrgs => prevOrgs.filter(org => org.id !== organization.id));
       } else {
         console.log(data.error || 'Ошибка при удалении организации');
       }
@@ -437,12 +438,12 @@ export default function OrganizationsPage() {
       if (response.ok) {
         console.log('✅ Admin deleted');
         // Удаляем администратора из локального состояния
-        setAdmins(admins.filter(a => a.id !== admin.id));
+        setAdmins(prevAdmins => prevAdmins.filter(a => a.id !== admin.id));
         
         // Обновляем организацию, если этот админ был назначен
         if (admin.organizationId) {
           console.log('  Updating organization to remove chairman');
-          setOrganizations(organizations.map(org => 
+          setOrganizations(prevOrgs => prevOrgs.map(org => 
             org.id === admin.organizationId 
               ? { ...org, chairmanName: undefined, chairmanId: undefined }
               : org
@@ -487,7 +488,7 @@ export default function OrganizationsPage() {
       if (response.ok) {
         console.log('✅ Admin updated');
         // Обновляем администратора в локальном состоянии
-        setAdmins(admins.map(a => 
+        setAdmins(prevAdmins => prevAdmins.map(a => 
           a.id === editingAdmin.id 
             ? {
                 ...a,
