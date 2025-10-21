@@ -24,14 +24,20 @@ export function UserProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       setError(null);
       
-      // Используем обычный fetch вместо cachedFetch для /api/auth/me
+      // Добавляем таймаут для запроса
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 секунд таймаут
+      
       const response = await fetch('/api/auth/me', {
         credentials: 'include', // Включаем cookies
         headers: {
           'Content-Type': 'application/json',
         },
         cache: 'no-store', // Отключаем кеширование
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         setError('Ошибка авторизации');
@@ -64,7 +70,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
         setUser(realUser);
       }
     } catch (error) {
-      setError('Ошибка загрузки пользователя');
+      if (error instanceof Error && error.name === 'AbortError') {
+        setError('Превышено время ожидания. Проверьте подключение к интернету.');
+      } else {
+        setError('Ошибка загрузки пользователя');
+      }
     } finally {
       setIsLoading(false);
     }

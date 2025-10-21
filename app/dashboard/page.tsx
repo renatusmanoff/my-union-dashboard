@@ -7,7 +7,7 @@ import { UserRole } from '@prisma/client';
 import DashboardLayout from '@/components/DashboardLayout';
 
 export default function DashboardPage() {
-  const { user, isLoading } = useUser();
+  const { user, isLoading, error } = useUser();
   const router = useRouter();
 
   useEffect(() => {
@@ -36,16 +36,31 @@ export default function DashboardPage() {
     }
   }, [user, isLoading, router]);
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-xl mb-4">⚠️</div>
+          <p className="text-red-400 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Обновить страницу
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
-      <DashboardLayout>
-        <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-2 text-gray-400">Определение роли пользователя...</p>
-          </div>
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-2 text-gray-400">Загрузка дашборда...</p>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
