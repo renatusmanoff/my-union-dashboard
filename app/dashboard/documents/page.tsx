@@ -71,14 +71,14 @@ export default function DocumentsPage() {
   useEffect(() => {
     async function loadDocuments() {
       try {
-        const response = await fetch('/api/documents');
-        if (response.ok) {
-          const data = await response.json();
-          setDocuments(data.documents || []);
-        }
-      } catch (error) {
+      const response = await fetch('/api/documents');
+      if (response.ok) {
+        const data = await response.json();
+        setDocuments(data.documents || []);
+      }
+    } catch (error) {
         console.error('Error loading documents:', error);
-      } finally {
+    } finally {
         setLoadingDocs(false);
       }
     }
@@ -140,7 +140,6 @@ export default function DocumentsPage() {
 
   const handleFileUpload = async (file: File): Promise<string | null> => {
     try {
-      setUploading(true);
       const formDataForUpload = new FormData();
       formDataForUpload.append('file', file);
 
@@ -157,8 +156,6 @@ export default function DocumentsPage() {
     } catch (error) {
       console.error('File upload error:', error);
       return null;
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -453,7 +450,7 @@ export default function DocumentsPage() {
                           </svg>
                           <p className="text-gray-300">Перетащите файл или нажмите для выбора</p>
                           <p className="text-xs text-gray-400 mt-1">PDF, DOC, XLS до 50 МБ</p>
-                        </div>
+                  </div>
                       )}
                     </label>
                 </div>

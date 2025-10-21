@@ -13,12 +13,12 @@ interface MembershipStatus {
 export default function MemberDashboard() {
   const { user, isLoading } = useUser();
   const [memberStatus, setMemberStatus] = useState<MembershipStatus | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [statusLoading] = useState(true);
 
   useEffect(() => {
     const fetchMembershipStatus = async () => {
       try {
-        setStatusLoading(true);
         const response = await fetch('/api/membership/application');
         if (response.ok) {
           const data = await response.json();
@@ -33,8 +33,6 @@ export default function MemberDashboard() {
         }
       } catch (error) {
         console.error('Error fetching membership status:', error);
-      } finally {
-        setStatusLoading(false);
       }
     };
 

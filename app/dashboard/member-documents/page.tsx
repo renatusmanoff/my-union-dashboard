@@ -31,6 +31,7 @@ interface Application {
 }
 
 export default function MemberDocumentsPage() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { user: _user } = useUser();
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);

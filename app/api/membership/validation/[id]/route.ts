@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/database";
+import { ApplicationStatus } from "@prisma/client";
 import { emailNotificationService } from "@/lib/email-notifications";
 
 export async function PATCH(

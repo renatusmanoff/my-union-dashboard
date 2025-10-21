@@ -233,24 +233,24 @@ export default function RegisterPage() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const addSpecialty = () => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     setNewMemberData(prev => ({
       ...prev,
       specialties: [...(prev.specialties || []), '']
     }));
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const addPosition = () => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     setNewMemberData(prev => ({
       ...prev,
       positions: [...(prev.positions || []), '']
     }));
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const addChild = () => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     setNewMemberData(prev => ({
       ...prev,
       children: [...(prev.children || []), { name: '', dateOfBirth: new Date() }]

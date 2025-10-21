@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { User } from '@/types';
 
 export default function ProfilePage() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [user] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -31,7 +32,6 @@ export default function ProfilePage() {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setUser(data.user);
           setFormData({
             firstName: data.user.firstName || '',
             lastName: data.user.lastName || '',

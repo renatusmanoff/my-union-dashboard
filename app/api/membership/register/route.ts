@@ -6,7 +6,6 @@ import { getCurrentUser } from '@/lib/auth';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('🔍 [DEBUG] Registration request body:', body);
     
     const {
       firstName,
@@ -23,7 +22,6 @@ export async function POST(request: NextRequest) {
 
     // Валидация обязательных полей
     if (!firstName || !lastName || !gender || !dateOfBirth || !phone || !organizationId || !address) {
-      console.log('🔍 [DEBUG] Missing required fields');
       return NextResponse.json(
         { error: "Все обязательные поля должны быть заполнены" },
         { status: 400 }
@@ -44,10 +42,7 @@ export async function POST(request: NextRequest) {
       if (isNaN(parsedDateOfBirth.getTime())) {
         throw new Error('Invalid date format');
       }
-      
-      console.log('🔍 [DEBUG] Parsed date:', parsedDateOfBirth);
-    } catch (error) {
-      console.log('🔍 [DEBUG] Date parsing error:', error);
+    } catch {
       return NextResponse.json(
         { error: "Неверный формат даты рождения" },
         { status: 400 }
@@ -136,14 +131,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error("🔍 [DEBUG] Registration error:", error);
-    
-    // Логируем детали ошибки для отладки
-    if (error instanceof Error) {
-      console.error("🔍 [DEBUG] Error message:", error.message);
-      console.error("🔍 [DEBUG] Error stack:", error.stack);
-    }
-    
     return NextResponse.json(
       { 
         error: "Ошибка при регистрации",

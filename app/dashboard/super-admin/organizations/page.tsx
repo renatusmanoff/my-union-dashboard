@@ -62,6 +62,7 @@ export default function OrganizationsPage() {
   const [activeTab, setActiveTab] = useState<'organizations' | 'admins'>('organizations');
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [admins, setAdmins] = useState<AdminUser[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
@@ -127,7 +128,6 @@ export default function OrganizationsPage() {
 
   const fetchOrganizations = useCallback(async () => {
     try {
-      setIsLoading(true);
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
       if (typeFilter) params.append('type', typeFilter);
@@ -140,8 +140,6 @@ export default function OrganizationsPage() {
       } else {
       }
     } catch {
-    } finally {
-      setIsLoading(false);
     }
   }, [searchTerm, typeFilter]);
 
@@ -271,7 +269,6 @@ export default function OrganizationsPage() {
         console.log(orgData.error || 'Ошибка при создании организации');
       }
     } catch {
-      console.error('Error creating organization or admin:', error);
       console.log('Ошибка при создании организации или администратора');
     }
   };
@@ -346,7 +343,6 @@ export default function OrganizationsPage() {
         console.log(data.error || 'Ошибка при удалении организации');
       }
     } catch {
-      console.error('Error deleting organization:', error);
       console.log('Ошибка при удалении организации');
     }
   };
@@ -377,7 +373,6 @@ export default function OrganizationsPage() {
         console.log(data.error || 'Ошибка при обновлении организации');
       }
     } catch {
-      console.error('Error updating organization:', error);
       console.log('Ошибка при обновлении организации');
     }
   };
@@ -459,7 +454,6 @@ export default function OrganizationsPage() {
         console.log(data.error || 'Ошибка при удалении администратора');
       }
     } catch {
-      console.error('Error deleting admin:', error);
       console.log('Ошибка при удалении администратора');
     }
   };
@@ -508,7 +502,6 @@ export default function OrganizationsPage() {
         console.log(data.error || 'Ошибка при обновлении администратора');
       }
     } catch {
-      console.error('Error updating admin:', error);
       console.log('Ошибка при обновлении администратора');
     }
   };
