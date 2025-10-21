@@ -26,35 +26,35 @@ const publicOnlyRoutes = [
   '/register'
 ];
 
-// Простая функция для проверки JWT токена
-function isValidJWT(token: string): boolean {
-  try {
-    // Простая проверка структуры JWT
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      return false;
-    }
-    
-    // Декодируем payload
-    const payload = JSON.parse(atob(parts[1]));
-    
-    // Проверяем, не истек ли токен
-    const currentTime = Date.now() / 1000;
-    if (payload.exp && payload.exp < currentTime) {
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
+// Простая функция для проверки JWT токена (больше не используется)
+// function isValidJWT(token: string): boolean {
+//   try {
+//     // Простая проверка структуры JWT
+//     const parts = token.split('.');
+//     if (parts.length !== 3) {
+//       return false;
+//     }
+//     
+//     // Декодируем payload
+//     const payload = JSON.parse(atob(parts[1]));
+//     
+//     // Проверяем, не истек ли токен
+//     const currentTime = Date.now() / 1000;
+//     if (payload.exp && payload.exp < currentTime) {
+//       return false;
+//     }
+//     
+//     return true;
+//   } catch (error) {
+//     return false;
+//   }
+// }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Получаем токен из cookies
-  const token = request.cookies.get('auth-token')?.value;
+  // Получаем sessionId из cookies
+  const sessionId = request.cookies.get('session-id')?.value;
   
   // Проверяем, является ли маршрут публичным API
   const isPublicApiRoute = publicApiRoutes.some(route => 
@@ -83,7 +83,7 @@ export async function middleware(request: NextRequest) {
   
   // Если маршрут защищенный
   if (isProtectedRoute) {
-    if (!token || !isValidJWT(token)) {
+    if (!sessionId) {
       // Перенаправляем на страницу входа
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
@@ -92,7 +92,7 @@ export async function middleware(request: NextRequest) {
   }
   
   // Если маршрут только для неавторизованных и пользователь авторизован
-  if (isPublicOnlyRoute && token && isValidJWT(token)) {
+  if (isPublicOnlyRoute && sessionId) {
     // Перенаправляем на дашборд
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }

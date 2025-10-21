@@ -48,7 +48,7 @@ function LoginForm() {
           window.dispatchEvent(new Event('auth-change'));
         }
         // Перенаправляем на главную страницу
-        window.location.href = redirectTo;
+        router.push(redirectTo);
       } else {
         setError(data.error || 'Произошла ошибка при входе');
       }
