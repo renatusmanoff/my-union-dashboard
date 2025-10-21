@@ -33,30 +33,38 @@ export async function GET(request: NextRequest) {
     if (currentUser.role === 'PRIMARY_CHAIRMAN') {
       whereClause.organizationId = currentUser.organizationId;
     } else if (currentUser.role === 'LOCAL_CHAIRMAN') {
-      const localOrg = await prisma.organization.findUnique({
-        where: { id: currentUser.organizationId },
-        include: { children: true }
-      });
-      const childOrgIds = localOrg?.children.map(child => child.id) || [];
-      whereClause.organizationId = {
-        in: [currentUser.organizationId, ...childOrgIds]
-      };
+      if (!currentUser.organizationId) {
+        whereClause.organizationId = { in: [] };
+      } else {
+        const localOrg = await prisma.organization.findUnique({
+          where: { id: currentUser.organizationId },
+          include: { children: true }
+        });
+        const childOrgIds = localOrg?.children.map(child => child.id) || [];
+        whereClause.organizationId = {
+          in: [currentUser.organizationId, ...childOrgIds]
+        };
+      }
     } else if (currentUser.role === 'REGIONAL_CHAIRMAN') {
-      const regionalOrg = await prisma.organization.findUnique({
-        where: { id: currentUser.organizationId },
-        include: { 
-          children: {
-            include: { children: true }
+      if (!currentUser.organizationId) {
+        whereClause.organizationId = { in: [] };
+      } else {
+        const regionalOrg = await prisma.organization.findUnique({
+          where: { id: currentUser.organizationId },
+          include: { 
+            children: {
+              include: { children: true }
+            }
           }
-        }
-      });
-      const allChildIds = regionalOrg?.children.flatMap(child => [
-        child.id,
-        ...child.children.map(grandChild => grandChild.id)
-      ]) || [];
-      whereClause.organizationId = {
-        in: [currentUser.organizationId, ...allChildIds]
-      };
+        });
+        const allChildIds = regionalOrg?.children.flatMap(child => [
+          child.id,
+          ...child.children.map(grandChild => grandChild.id)
+        ]) || [];
+        whereClause.organizationId = {
+          in: [currentUser.organizationId, ...allChildIds]
+        };
+      }
     }
     // SUPER_ADMIN и FEDERAL_CHAIRMAN видят все документы
 
