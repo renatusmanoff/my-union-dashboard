@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
     cookieStore.set('auth-token', token, {
       httpOnly: true,
       secure: true,
-      sameSite: 'none', // Required when using https with proxies
+      sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7 // 7 дней
     });
 
