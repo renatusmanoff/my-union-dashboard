@@ -116,11 +116,9 @@ export default function OrganizationsPage() {
         }));
         return foundOrg;
       } else {
-        console.error('Organization not found:', data.error);
         return null;
       }
     } catch (error) {
-      console.error('Error searching organization by INN:', error);
       return null;
     } finally {
       setSearchingINN(false);
@@ -140,10 +138,8 @@ export default function OrganizationsPage() {
       if (data.success) {
         setOrganizations(data.organizations);
       } else {
-        console.error('Error fetching organizations:', data.error);
       }
     } catch (error) {
-      console.error('Error fetching organizations:', error);
     } finally {
       setIsLoading(false);
     }
@@ -162,10 +158,8 @@ export default function OrganizationsPage() {
       if (data.success) {
         setAdmins(data.admins);
       } else {
-        console.error('Error fetching admins:', data.error);
       }
     } catch (error) {
-      console.error('Error fetching admins:', error);
     }
   }, []);
 
