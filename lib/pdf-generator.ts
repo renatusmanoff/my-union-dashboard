@@ -879,7 +879,19 @@ function generateAgendaHTML(data: WorkflowDocumentData): string {
   <head>
     <meta charset="UTF-8">
     <title>${data.document.title}</title>
-    ${getCommonStyles()}
+    <style>
+      body { font-family: 'Times New Roman', serif; margin: 40px; line-height: 1.6; }
+      .header { text-align: center; margin-bottom: 30px; }
+      .title { font-size: 16px; font-weight: bold; margin-bottom: 20px; }
+      .org-name { font-size: 14px; margin-bottom: 20px; }
+      .info-section { margin-bottom: 20px; }
+      .info-row { margin-bottom: 10px; }
+      .agenda-items { margin-bottom: 20px; }
+      .agenda-item { margin-bottom: 15px; padding: 10px; border-left: 3px solid #007bff; }
+      .signatures { margin-top: 40px; }
+      .signature-line { margin-bottom: 20px; }
+      .signature-line span { display: inline-block; width: 200px; border-bottom: 1px solid #000; margin-right: 20px; }
+    </style>
   </head>
   <body>
     <div class="header">
