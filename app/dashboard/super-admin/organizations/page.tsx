@@ -418,7 +418,8 @@ export default function OrganizationsPage() {
   };
 
   const handleDeleteAdmin = async (admin: AdminUser) => {
-    if (!confirm(`Вы уверены, что хотите удалить администратора "${admin.firstName} ${admin.lastName}"?`)) {
+    const confirmed = window.confirm(`Вы уверены, что хотите удалить администратора "${admin.firstName} ${admin.lastName}"?`);
+    if (!confirmed) {
       return;
     }
 
@@ -451,10 +452,12 @@ export default function OrganizationsPage() {
         console.log('Администратор успешно удален');
         cache.clear();
       } else {
-        console.log(data.error || 'Ошибка при удалении администратора');
+        console.error('❌ Error deleting admin:', data.error);
+        alert(`Ошибка при удалении администратора: ${data.error}`);
       }
-    } catch {
-      console.log('Ошибка при удалении администратора');
+    } catch (error) {
+      console.error('❌ Error deleting admin:', error);
+      alert('Произошла ошибка при удалении администратора');
     }
   };
 
@@ -499,10 +502,12 @@ export default function OrganizationsPage() {
         console.log(data.message || 'Администратор успешно обновлен');
         cache.clear();
       } else {
-        console.log(data.error || 'Ошибка при обновлении администратора');
+        console.error('❌ Error updating admin:', data.error);
+        alert(`Ошибка при обновлении администратора: ${data.error}`);
       }
-    } catch {
-      console.log('Ошибка при обновлении администратора');
+    } catch (error) {
+      console.error('❌ Error updating admin:', error);
+      alert('Произошла ошибка при обновлении администратора');
     }
   };
 
@@ -1051,20 +1056,28 @@ export default function OrganizationsPage() {
                         <td className="px-6 py-4 text-sm">
                           <div className="flex space-x-2">
                             <button 
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log('Edit button clicked for admin:', admin.id);
                                 handleEditAdmin(admin);
                               }}
                               className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-600/20 rounded-lg transition-colors"
                               title="Редактировать"
+                              type="button"
                             >
                               <PencilIcon className="w-5 h-5" />
                             </button>
                             <button 
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log('Delete button clicked for admin:', admin.id);
                                 handleDeleteAdmin(admin);
                               }}
                               className="p-2 text-red-400 hover:text-red-300 hover:bg-red-600/20 rounded-lg transition-colors"
                               title="Удалить"
+                              type="button"
                             >
                               <TrashIcon className="w-5 h-5" />
                             </button>
