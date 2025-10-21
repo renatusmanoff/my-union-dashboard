@@ -62,25 +62,33 @@ export async function PATCH(
     } else if (currentUser.role === 'PRIMARY_CHAIRMAN') {
       hasPermission = application.organizationId === currentUser.organizationId;
     } else if (currentUser.role === 'LOCAL_CHAIRMAN') {
-      const localOrg = await prisma.organization.findUnique({
-        where: { id: currentUser.organizationId },
-        include: { children: true }
-      });
-      hasPermission = localOrg?.children.some(child => child.id === application.organizationId) || false;
+      if (!currentUser.organizationId) {
+        hasPermission = false;
+      } else {
+        const localOrg = await prisma.organization.findUnique({
+          where: { id: currentUser.organizationId },
+          include: { children: true }
+        });
+        hasPermission = localOrg?.children.some(child => child.id === application.organizationId) || false;
+      }
     } else if (currentUser.role === 'REGIONAL_CHAIRMAN') {
-      const regionalOrg = await prisma.organization.findUnique({
-        where: { id: currentUser.organizationId },
-        include: { 
-          children: {
-            include: { children: true }
+      if (!currentUser.organizationId) {
+        hasPermission = false;
+      } else {
+        const regionalOrg = await prisma.organization.findUnique({
+          where: { id: currentUser.organizationId },
+          include: { 
+            children: {
+              include: { children: true }
+            }
           }
-        }
-      });
-      const allChildIds = regionalOrg?.children.flatMap(child => [
-        child.id,
-        ...child.children.map(grandChild => grandChild.id)
-      ]) || [];
-      hasPermission = allChildIds.includes(application.organizationId);
+        });
+        const allChildIds = regionalOrg?.children.flatMap(child => [
+          child.id,
+          ...child.children.map(grandChild => grandChild.id)
+        ]) || [];
+        hasPermission = allChildIds.includes(application.organizationId);
+      }
     }
 
     if (!hasPermission) {
