@@ -28,7 +28,7 @@ export default function DashboardLayout({ children, userRole }: DashboardLayoutP
       {/* Sidebar */}
       {!isLoading && (
         <Sidebar 
-          userRole={user?.role || userRole}
+          userRole={(user?.role as UserRole) || userRole}
           isCollapsed={sidebarCollapsed}
           onToggleCollapse={toggleSidebar}
         />
