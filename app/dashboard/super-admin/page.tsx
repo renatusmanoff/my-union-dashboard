@@ -17,7 +17,7 @@ interface SystemStats {
 }
 
 export default function SuperAdminDashboard() {
-  const { user } = useUser();
+  const { user, isLoading } = useUser();
   const [stats, setStats] = useState<SystemStats>({
     totalOrganizations: 0,
     totalUsers: 0,
@@ -27,7 +27,7 @@ export default function SuperAdminDashboard() {
     approvedApplications: 0,
     rejectedApplications: 0
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
     fetchSystemStats();
@@ -35,7 +35,7 @@ export default function SuperAdminDashboard() {
 
   const fetchSystemStats = async () => {
     try {
-      setIsLoading(true);
+      setStatsLoading(true);
       const response = await fetch('/api/admin/system-stats');
       if (response.ok) {
         const data = await response.json();
@@ -44,9 +44,22 @@ export default function SuperAdminDashboard() {
     } catch (error) {
       console.error('Error fetching system stats:', error);
     } finally {
-      setIsLoading(false);
+      setStatsLoading(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="mt-2 text-gray-400">Загрузка профиля...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   if (!user || user.role !== UserRole.SUPER_ADMIN) {
     return (
@@ -61,7 +74,7 @@ export default function SuperAdminDashboard() {
     );
   }
 
-  if (isLoading) {
+  if (statsLoading) {
     return (
       <DashboardLayout>
         <div className="min-h-screen bg-gray-900 flex items-center justify-center">
