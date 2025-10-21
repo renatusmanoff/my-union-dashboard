@@ -166,6 +166,7 @@ export default function OrganizationsPage() {
     fetchAdmins();
   }, [fetchOrganizations, fetchAdmins]);
 
+
   // Обновляем роль по умолчанию при изменении типа организации
   useEffect(() => {
     const defaultRole = getRolesByOrganizationType(formData.type)[0]?.role;
@@ -425,7 +426,6 @@ export default function OrganizationsPage() {
     }
 
     try {
-      console.log('🗑️ Deleting admin:', admin.id);
       const response = await fetch(`/api/admin?id=${admin.id}`, {
         method: 'DELETE',
         headers: {
@@ -436,13 +436,11 @@ export default function OrganizationsPage() {
       const data = await response.json();
 
       if (response.ok) {
-        console.log('✅ Admin deleted');
         // Удаляем администратора из локального состояния
         setAdmins(prevAdmins => prevAdmins.filter(a => a.id !== admin.id));
         
         // Обновляем организацию, если этот админ был назначен
         if (admin.organizationId) {
-          console.log('  Updating organization to remove chairman');
           setOrganizations(prevOrgs => prevOrgs.map(org => 
             org.id === admin.organizationId 
               ? { ...org, chairmanName: undefined, chairmanId: undefined }
@@ -450,14 +448,11 @@ export default function OrganizationsPage() {
           ));
         }
         
-        console.log('Администратор успешно удален');
         cache.clear();
       } else {
-        console.error('❌ Error deleting admin:', data.error);
         alert(`Ошибка при удалении администратора: ${data.error}`);
       }
     } catch (error) {
-      console.error('❌ Error deleting admin:', error);
       alert('Произошла ошибка при удалении администратора');
     }
   };
@@ -467,9 +462,6 @@ export default function OrganizationsPage() {
     if (!editingAdmin) return;
 
     try {
-      console.log('✏️ Updating admin:', editingAdmin.id);
-      console.log('   Data:', editAdminData);
-      
       const response = await fetch('/api/admin', {
         method: 'PUT',
         headers: {
@@ -482,11 +474,8 @@ export default function OrganizationsPage() {
       });
 
       const data = await response.json();
-      console.log('   Response status:', response.status);
-      console.log('   Response data:', data);
 
       if (response.ok) {
-        console.log('✅ Admin updated');
         // Обновляем администратора в локальном состоянии
         setAdmins(prevAdmins => prevAdmins.map(a => 
           a.id === editingAdmin.id 
@@ -500,14 +489,11 @@ export default function OrganizationsPage() {
         
         setEditingAdmin(null);
         setShowEditAdminForm(false);
-        console.log(data.message || 'Администратор успешно обновлен');
         cache.clear();
       } else {
-        console.error('❌ Error updating admin:', data.error);
         alert(`Ошибка при обновлении администратора: ${data.error}`);
       }
     } catch (error) {
-      console.error('❌ Error updating admin:', error);
       alert('Произошла ошибка при обновлении администратора');
     }
   };
@@ -1060,7 +1046,6 @@ export default function OrganizationsPage() {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                console.log('Edit button clicked for admin:', admin.id);
                                 handleEditAdmin(admin);
                               }}
                               className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-600/20 rounded-lg transition-colors"
@@ -1073,7 +1058,6 @@ export default function OrganizationsPage() {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                console.log('Delete button clicked for admin:', admin.id);
                                 handleDeleteAdmin(admin);
                               }}
                               className="p-2 text-red-400 hover:text-red-300 hover:bg-red-600/20 rounded-lg transition-colors"
