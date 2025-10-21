@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { UserRole } from '@prisma/client';
+import { cookies } from 'next/headers';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -189,4 +190,61 @@ export async function hashPassword(password: string): Promise<string> {
 // Функция для проверки пароля
 export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
   return await bcrypt.compare(password, hashedPassword);
+}
+
+// Функция для получения пользователя из сессии (для серверных компонентов)
+export async function getCurrentUser(): Promise<{
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  phone: string;
+  role: UserRole;
+  organizationId: string | null;
+  isActive: boolean;
+} | null> {
+  try {
+    const cookieStore = await cookies();
+    const sessionId = cookieStore.get('session-id')?.value;
+
+    if (!sessionId) {
+      return null;
+    }
+
+    // Получаем данные сессии из базы данных
+    const { prisma } = await import('@/lib/database');
+    const session = await prisma.session.findUnique({
+      where: { token: sessionId },
+      include: {
+        user: true
+      }
+    });
+
+    if (!session) {
+      return null;
+    }
+
+    // Проверяем, не истекла ли сессия
+    if (new Date() > session.expiresAt) {
+      await prisma.session.delete({ where: { id: session.id } });
+      return null;
+    }
+
+    const user = session.user;
+
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      middleName: user.middleName || undefined,
+      phone: user.phone,
+      role: user.role as UserRole,
+      organizationId: user.organizationId,
+      isActive: user.isActive
+    };
+  } catch {
+    return null;
+  }
 }
