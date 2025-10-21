@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const verified = await jwtVerify(token, JWT_SECRET);
+    await jwtVerify(token, JWT_SECRET);
 
     const formData = await req.formData();
     const file = formData.get('file') as File;
@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
 
           try {
             await mkdir(UPLOAD_DIR, { recursive: true });
-          } catch (error) {
+          } catch {
             // Директория может уже существовать
           }
 

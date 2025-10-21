@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export default function DebugPage() {
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<Array<{test: string, result: unknown, time: number, timestamp: string}>>([]);
   const [loading, setLoading] = useState(false);
 
-  const addResult = (test: string, result: any, time: number) => {
+  const addResult = (test: string, result: unknown, time: number) => {
     setResults(prev => [...prev, { test, result, time, timestamp: new Date().toISOString() }]);
   };
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useUser } from '@/contexts/UserContext';
 import { useRouter } from 'next/navigation';
@@ -66,7 +66,6 @@ export default function DocumentsPage() {
     documentDate: new Date().toISOString().split('T')[0]
   });
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
 
   // Загружаем документы
   useEffect(() => {

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/database';
 import nodemailer from 'nodemailer';
 
 // Конфигурация SMTP
@@ -17,7 +16,7 @@ const transporter = nodemailer.createTransport(smtpConfig);
 
 export async function POST(request: NextRequest) {
   try {
-    const { applicationId, applicantEmail, applicantName, organizationName } = await request.json();
+    const { applicantEmail, applicantName, organizationName } = await request.json();
 
     const mailOptions = {
       from: 'support@myunion.pro',

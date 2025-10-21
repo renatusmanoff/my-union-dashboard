@@ -22,7 +22,7 @@ export async function POST(
     const userId = verified.payload.userId as string;
 
     const body = await req.json();
-    const { approved = true, rejectionReason } = body;
+    const { approved = true } = body;
 
     const { id } = await params;
     const documentId = id;

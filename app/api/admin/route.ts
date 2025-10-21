@@ -15,7 +15,7 @@ function generateTemporaryPassword(): string {
 }
 
 // GET - получение списка администраторов
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser) {

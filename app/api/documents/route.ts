@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'secret');
 
 // GET - список документов
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
               status: 'PENDING'
             }
           });
-        } catch (e) {
+        } catch {
           // Пропускаем дубликаты
         }
       }
