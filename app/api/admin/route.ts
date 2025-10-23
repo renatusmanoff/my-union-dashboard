@@ -1,21 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser, isSuperAdmin } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/database';
-import { hashPassword } from '@/lib/auth';
-import { sendAdminCredentials } from '@/lib/email';
+import bcrypt from 'bcryptjs';
 
-// Функция для генерации временного пароля
-function generateTemporaryPassword(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-  let password = '';
-  for (let i = 0; i < 12; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return password;
-}
-
-// GET - получение списка администраторов
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
@@ -25,22 +13,21 @@ export async function GET(_request: NextRequest) {
       );
     }
 
-    if (!isSuperAdmin(currentUser.role)) {
-      return NextResponse.json(
-        { error: 'Недостаточно прав для просмотра администраторов' },
-        { status: 403 }
-      );
-    }
-
-    // Получаем всех пользователей с ролями администраторов
+    // Получаем только руководителей (председатели и их заместители)
     const admins = await prisma.user.findMany({
       where: {
-        OR: [
-          { role: 'FEDERAL_CHAIRMAN' },
-          { role: 'REGIONAL_CHAIRMAN' },
-          { role: 'LOCAL_CHAIRMAN' },
-          { role: 'PRIMARY_CHAIRMAN' }
-        ]
+        role: {
+          in: [
+            'SUPER_ADMIN',
+            'REGIONAL_CHAIRMAN',
+            'REGIONAL_VICE_CHAIRMAN',
+            'LOCAL_CHAIRMAN',
+            'LOCAL_VICE_CHAIRMAN',
+            'PRIMARY_CHAIRMAN',
+            'PRIMARY_VICE_CHAIRMAN'
+          ]
+        },
+        isActive: true
       },
       include: {
         organization: {
@@ -52,8 +39,8 @@ export async function GET(_request: NextRequest) {
         }
       },
       orderBy: [
-        { organization: { name: 'asc' } },
-        { lastName: 'asc' }
+        { lastName: 'asc' },
+        { firstName: 'asc' }
       ]
     });
 
@@ -68,10 +55,8 @@ export async function GET(_request: NextRequest) {
         phone: admin.phone,
         role: admin.role,
         organizationId: admin.organizationId,
-        organizationName: admin.organization?.name || 'Неизвестная организация',
-        organizationType: admin.organization?.type || 'UNKNOWN',
+        organizationName: admin.organization?.name,
         isActive: admin.isActive,
-        emailVerified: admin.emailVerified,
         createdAt: admin.createdAt,
         updatedAt: admin.updatedAt
       }))
@@ -86,240 +71,87 @@ export async function GET(_request: NextRequest) {
   }
 }
 
-// PUT - обновление администратора
-export async function PUT(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
       return NextResponse.json(
         { error: 'Пользователь не авторизован' },
         { status: 401 }
-      );
-    }
-
-    if (!isSuperAdmin(currentUser.role)) {
-      return NextResponse.json(
-        { error: 'Недостаточно прав для редактирования администраторов' },
-        { status: 403 }
       );
     }
 
     const body = await request.json();
-    const { id, email, firstName, lastName, middleName, phone, role, organizationId, generateNewPassword } = body;
+    const { email, firstName, lastName, middleName, phone, birthDate, role, organizationId, generateNewPassword } = body;
 
-    // Валидация
-    if (!id || !email || !firstName || !lastName || !phone || !role || !organizationId) {
+    if (!email || !firstName || !lastName || !phone || !role || !organizationId) {
       return NextResponse.json(
-        { error: 'Все поля обязательны' },
+        { error: 'Все обязательные поля должны быть заполнены' },
         { status: 400 }
       );
     }
 
-    // Проверяем, существует ли администратор
-    const existingAdmin = await prisma.user.findUnique({
-      where: { id },
-      include: {
-        organization: {
-          select: {
-            name: true,
-            type: true
-          }
-        }
-      }
+    // Проверяем, существует ли организация
+    const organization = await prisma.organization.findUnique({
+      where: { id: organizationId }
     });
 
-    if (!existingAdmin) {
+    if (!organization) {
       return NextResponse.json(
-        { error: 'Администратор не найден' },
+        { error: 'Организация не найдена' },
         { status: 404 }
       );
     }
 
-    // Проверяем, что email уникален (если изменился)
-    if (email !== existingAdmin.email) {
-      const emailExists = await prisma.user.findUnique({
-        where: { email }
-      });
+    // Генерируем пароль
+    const password = generateNewPassword ? Math.random().toString(36).substring(2, 15) : '123321ZxQ@*';
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-      if (emailExists) {
-        return NextResponse.json(
-          { error: 'Пользователь с таким email уже существует' },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Подготавливаем данные для обновления
-    const updateData: Record<string, unknown> = {
-      email,
-      firstName,
-      lastName,
-      middleName: middleName || null,
-      phone,
-      role,
-      organizationId
-    };
-
-    // Если нужно сгенерировать новый пароль
-    let newPassword = null;
-    if (generateNewPassword) {
-      newPassword = generateTemporaryPassword();
-      updateData.password = await hashPassword(newPassword);
-    }
-
-    // Обновляем администратора
-    const updatedAdmin = await prisma.user.update({
-      where: { id },
-      data: updateData,
-      include: {
-        organization: {
-          select: {
-            name: true,
-            type: true
-          }
-        }
+    const admin = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        middleName: middleName || null,
+        phone,
+        birthDate: birthDate ? new Date(birthDate) : null,
+        role,
+        organizationId,
+        isActive: true,
+        emailVerified: true,
+        membershipValidated: true
       }
     });
-
-    // Обновляем данные председателя в организации (если это председатель)
-    if (['FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN'].includes(role)) {
-      const chairmanFullName = `${firstName} ${lastName}${middleName ? ' ' + middleName : ''}`;
-      await prisma.organization.update({
-        where: { id: organizationId },
-        data: {
-          chairmanId: id,
-          chairmanName: chairmanFullName
-        }
-      });
-    }
-
-    // Отправляем email с новыми данными (если сгенерирован новый пароль)
-    let emailSent = false;
-    if (generateNewPassword && newPassword) {
-      emailSent = await sendAdminCredentials({
-        email: updatedAdmin.email,
-        firstName: updatedAdmin.firstName,
-        lastName: updatedAdmin.lastName,
-        temporaryPassword: newPassword,
-        role: updatedAdmin.role,
-        organizationName: updatedAdmin.organization?.name || 'Неизвестная организация'
-      });
-    }
 
     return NextResponse.json({
       success: true,
       admin: {
-        id: updatedAdmin.id,
-        email: updatedAdmin.email,
-        firstName: updatedAdmin.firstName,
-        lastName: updatedAdmin.lastName,
-        middleName: updatedAdmin.middleName,
-        phone: updatedAdmin.phone,
-        role: updatedAdmin.role,
-        organizationId: updatedAdmin.organizationId,
-        organizationName: updatedAdmin.organization?.name || 'Неизвестная организация',
-        isActive: updatedAdmin.isActive,
-        emailVerified: updatedAdmin.emailVerified,
-        createdAt: updatedAdmin.createdAt,
-        updatedAt: updatedAdmin.updatedAt
+        id: admin.id,
+        email: admin.email,
+        firstName: admin.firstName,
+        lastName: admin.lastName,
+        middleName: admin.middleName,
+        phone: admin.phone,
+        role: admin.role,
+        organizationId: admin.organizationId,
+        isActive: admin.isActive
       },
-      emailSent,
-      newPassword: generateNewPassword ? newPassword : undefined,
-      message: generateNewPassword 
-        ? (emailSent ? 'Администратор обновлен и новый пароль отправлен на email' : 'Администратор обновлен, но не удалось отправить email с новым паролем')
-        : 'Администратор успешно обновлен'
+      password: generateNewPassword ? password : null
     });
 
   } catch (error) {
-    console.error('Update admin error:', error);
+    console.error('Create admin error:', error);
+    
+    if (error instanceof Error && error.message.includes('Unique constraint failed')) {
+      return NextResponse.json(
+        { error: 'Пользователь с таким email уже существует' },
+        { status: 409 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Внутренняя ошибка сервера' },
-      { status: 500 }
-    );
-  }
-}
-
-// DELETE - удаление администратора
-export async function DELETE(request: NextRequest) {
-  try {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Пользователь не авторизован' },
-        { status: 401 }
-      );
-    }
-
-    if (!isSuperAdmin(currentUser.role)) {
-      return NextResponse.json(
-        { error: 'Недостаточно прав для удаления администраторов' },
-        { status: 403 }
-      );
-    }
-
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'ID администратора обязателен' },
-        { status: 400 }
-      );
-    }
-
-    // Проверяем, существует ли администратор
-    const existingAdmin = await prisma.user.findUnique({
-      where: { id },
-      include: {
-        organization: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      }
-    });
-
-    if (!existingAdmin) {
-      return NextResponse.json(
-        { error: 'Администратор не найден' },
-        { status: 404 }
-      );
-    }
-
-    // Нельзя удалить самого себя
-    if (id === currentUser.id) {
-      return NextResponse.json(
-        { error: 'Нельзя удалить самого себя' },
-        { status: 400 }
-      );
-    }
-
-    // Если это председатель, очищаем данные председателя в организации
-    if (['FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN'].includes(existingAdmin.role)) {
-      await prisma.organization.update({
-        where: { id: existingAdmin.organizationId! },
-        data: {
-          chairmanId: null,
-          chairmanName: null
-        }
-      });
-    }
-
-    // Удаляем администратора
-    await prisma.user.delete({
-      where: { id }
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: 'Администратор успешно удален'
-    });
-
-  } catch (error) {
-    console.error('Delete admin error:', error);
-    return NextResponse.json(
-      { error: 'Внутренняя ошибка сервера' },
+      { error: 'Ошибка при создании администратора' },
       { status: 500 }
     );
   }

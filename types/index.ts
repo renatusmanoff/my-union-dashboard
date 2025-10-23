@@ -1,29 +1,5 @@
 // Типы организаций
-export type OrganizationType = 'FEDERAL' | 'REGIONAL' | 'LOCAL' | 'PRIMARY';
-
-// Отрасли профсоюзов
-export type UnionIndustry = 
-  | 'EDUCATION'           // Образование и наука
-  | 'HEALTHCARE'          // Здравоохранение
-  | 'OIL_GAS'            // Нефтяная и газовая промышленность
-  | 'METALLURGY'         // Металлургия
-  | 'TRANSPORT'          // Транспорт
-  | 'CONSTRUCTION'       // Строительство
-  | 'COMMUNICATIONS'     // Связь
-  | 'ENERGY'             // Энергетика
-  | 'AGRICULTURE'        // Сельское хозяйство
-  | 'TRADE'              // Торговля
-  | 'CULTURE'            // Культура
-  | 'SPORT'              // Спорт
-  | 'DEFENSE'            // Оборонная промышленность
-  | 'CHEMICAL'           // Химическая промышленность
-  | 'TEXTILE'            // Легкая промышленность
-  | 'FOOD'               // Пищевая промышленность
-  | 'FORESTRY'           // Лесная промышленность
-  | 'MINING'             // Горнодобывающая промышленность
-  | 'MACHINE_BUILDING'   // Машиностроение
-  | 'FINANCE'            // Финансы и банковское дело
-  | 'PUBLIC_SERVICE';    // Государственная служба
+export type OrganizationType = 'REGIONAL' | 'LOCAL' | 'PRIMARY';
 
 // Типы ролей по уровням организаций
 export type FederalRole = 
@@ -103,6 +79,38 @@ export type UserRole =
   | ProfBureauRole 
   | ProfGroupRole;
 
+// Права доступа
+export interface Permission {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+}
+
+// Роль с правами доступа
+export interface Role {
+  id: string;
+  name: string;
+  description?: string;
+  isSystem: boolean;
+  permissions: Permission[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Категории прав доступа
+export type PermissionCategory = 
+  | 'organizations'     // Управление организациями
+  | 'users'            // Управление пользователями
+  | 'news'             // Новости
+  | 'documents'        // Документы
+  | 'messages'         // Сообщения
+  | 'discounts'        // Скидки
+  | 'profile'          // Профиль
+  | 'reports'          // Отчеты
+  | 'settings'         // Настройки
+  | 'admin';           // Администрирование
+
 export interface User {
   id: string;
   email: string;
@@ -110,6 +118,7 @@ export interface User {
   lastName: string;
   middleName?: string;
   phone: string;
+  birthDate?: Date; // Дата рождения (необязательное поле)
   role: UserRole;
   organizationId: string;
   organizationName: string;
@@ -127,7 +136,6 @@ export interface Organization {
   id: string;
   name: string;
   type: OrganizationType;
-  industry: UnionIndustry; // Отрасль профсоюза
   parentId?: string; // Для иерархии организаций
   parentName?: string;
   address: string;
@@ -138,6 +146,7 @@ export interface Organization {
   inn?: string; // ИНН организации
   membersCount: number;
   isActive: boolean;
+  isMain?: boolean; // Главная организация (нельзя удалить)
   createdAt: Date;
   updatedAt: Date;
 }

@@ -41,10 +41,9 @@ function LoginForm() {
       const data = await response.json();
 
       if (response.ok) {
-        // Сохраняем sessionId в localStorage
-        if (typeof window !== 'undefined' && data.sessionId) {
-          localStorage.setItem('session-id', data.sessionId);
-          // Отправляем событие для обновления UserContext
+        // API уже установил cookies, просто перенаправляем
+        // Отправляем событие для обновления UserContext
+        if (typeof window !== 'undefined') {
           window.dispatchEvent(new Event('auth-change'));
         }
         // Перенаправляем на главную страницу

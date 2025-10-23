@@ -66,6 +66,14 @@ export async function GET(request: NextRequest) {
 
     const user = session.user;
 
+    // Устанавливаем cookie с ролью пользователя для middleware
+    cookieStore.set('user-role', user.role, {
+      httpOnly: false, // Доступно для JavaScript
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7 // 7 дней
+    });
+
     return NextResponse.json({
       success: true,
       user: {

@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
     // Удаляем cookie
     const updatedCookieStore = await cookies();
     updatedCookieStore.delete('session-id');
+    updatedCookieStore.delete('user-role');
 
     return NextResponse.json({
       success: true,

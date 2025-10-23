@@ -7,15 +7,15 @@ async function main() {
 
   // Создаем только супер-администратора
   const superAdmin = await prisma.user.upsert({
-    where: { email: 'support@myunion.pro' },
+    where: { email: 'suslonova@myunion.pro' },
     update: {},
     create: {
-      email: 'support@myunion.pro',
+      email: 'suslonova@myunion.pro',
       firstName: 'Супер',
       lastName: 'Администратор',
       phone: '+7 (495) 000-00-00',
       role: 'SUPER_ADMIN',
-      password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // password
+      password: '$2b$10$a9F9vv7jBtxHQTsmvuZZAO7J/ESXLLh/Bc99w2pNAku/v9eWWoHtq', // 123321ZxQ@*
     },
   });
 

@@ -11,6 +11,13 @@ export const menuConfig: MenuItem[] = [
     roles: ['SUPER_ADMIN']
   },
   {
+    id: 'organizations',
+    label: 'Организации',
+    href: '/dashboard/super-admin/organizations',
+    icon: 'building-office',
+    roles: ['SUPER_ADMIN']
+  },
+  {
     id: 'membership-validation',
     label: 'Валидация членства',
     href: '/dashboard/membership-validation',
@@ -39,13 +46,6 @@ export const menuConfig: MenuItem[] = [
     roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
   },
   {
-    id: 'organizations',
-    label: 'Организации',
-    href: '/dashboard/organizations',
-    icon: 'building-office',
-    roles: ['SUPER_ADMIN']
-  },
-  {
     id: 'messages',
     label: 'Сообщения',
     href: '/dashboard/messages',
@@ -71,13 +71,6 @@ export const menuConfig: MenuItem[] = [
     label: 'База знаний',
     href: '/dashboard/knowledge',
     icon: 'book-open',
-    roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
-  },
-  {
-    id: 'employees',
-    label: 'Сотрудники',
-    href: '/dashboard/employees',
-    icon: 'users',
     roles: ['SUPER_ADMIN', 'FEDERAL_CHAIRMAN', 'REGIONAL_CHAIRMAN', 'LOCAL_CHAIRMAN', 'PRIMARY_CHAIRMAN']
   },
   {

@@ -19,12 +19,16 @@ export async function GET() {
         id: true,
         name: true,
         type: true,
+        parentId: true,
         address: true,
         phone: true,
         email: true,
         chairmanId: true,
         chairmanName: true,
+        inn: true,
+        membersCount: true,
         isActive: true,
+        isMain: true,
         createdAt: true,
         updatedAt: true
       },
@@ -56,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, type, address, phone, email, parentId, industry } = body;
+    const { name, type, address, phone, email, parentId, chairmanName, inn } = body;
 
     if (!name || !type || !address || !phone || !email) {
       return NextResponse.json(
@@ -73,8 +77,10 @@ export async function POST(request: NextRequest) {
         phone,
         email,
         parentId: parentId || null,
-        industry: industry || 'EDUCATION',
-        isActive: true
+        chairmanName: chairmanName || null,
+        inn: inn || null,
+        isActive: true,
+        isMain: false
       }
     });
 
@@ -142,6 +148,14 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json(
         { error: 'Организация не найдена' },
         { status: 404 }
+      );
+    }
+
+    // Нельзя удалить главную организацию
+    if (organization.isMain) {
+      return NextResponse.json(
+        { error: 'Главную организацию нельзя удалить' },
+        { status: 400 }
       );
     }
 

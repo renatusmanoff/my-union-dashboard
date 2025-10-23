@@ -78,6 +78,14 @@ export async function POST(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 7 // 7 дней
     });
 
+    // Устанавливаем cookie с ролью пользователя для middleware
+    cookieStore.set('user-role', user.role, {
+      httpOnly: false, // Доступно для JavaScript
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7 // 7 дней
+    });
+
     // Возвращаем sessionId в response body ПЛЮС в cookie
     return NextResponse.json({
       success: true,

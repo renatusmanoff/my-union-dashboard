@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack --port 3000 --hostname localhost",
+    "dev": "next dev --port 3000 --hostname localhost",
     "build": "next build",
     "start": "next start --port 3000 --hostname localhost",
     "lint": "eslint",
@@ -25,6 +25,7 @@
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.8.0",
     "cookie": "^1.0.2",
+    "date-fns": "^4.1.0",
     "flowbite": "^3.1.2",
     "flowbite-react": "^0.12.9",
     "jsonwebtoken": "^9.0.2",
@@ -33,6 +34,7 @@
     "puppeteer": "^24.25.0",
     "puppeteer-core": "^24.25.0",
     "react": "19.1.0",
+    "react-day-picker": "^9.11.1",
     "react-dom": "19.1.0",
     "zod": "^4.1.12"
   },

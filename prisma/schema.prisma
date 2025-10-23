@@ -10,6 +10,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Роли и права доступа
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isSystem    Boolean  @default(false) // Системные роли нельзя удалять
+  permissions Json     // JSON с правами доступа
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Связи
+  users       User[]
+}
+
 // Пользователи системы
 model User {
   id              String   @id @default(cuid())
@@ -19,7 +33,10 @@ model User {
   lastName        String
   middleName      String?
   phone           String
+  birthDate       DateTime? // Дата рождения (необязательное поле)
   role            UserRole @default(PRIMARY_MEMBER)
+  customRoleId    String?  // Кастомная роль
+  customRole      Role?     @relation(fields: [customRoleId], references: [id], onDelete: SetNull)
   avatar          String?
   isActive        Boolean  @default(true)
   emailVerified   Boolean  @default(false)
@@ -83,7 +100,6 @@ model Organization {
   id            String   @id @default(cuid())
   name          String
   type          OrganizationType
-  industry      UnionIndustry
   parentId      String?
   parent        Organization? @relation("OrganizationHierarchy", fields: [parentId], references: [id])
   children      Organization[] @relation("OrganizationHierarchy")
@@ -95,6 +111,7 @@ model Organization {
   inn           String?
   membersCount  Int      @default(0)
   isActive      Boolean  @default(true)
+  isMain        Boolean  @default(false) // Главная организация (нельзя удалить)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -512,34 +529,9 @@ enum UserRole {
 }
 
 enum OrganizationType {
-  FEDERAL
   REGIONAL
   LOCAL
   PRIMARY
-}
-
-enum UnionIndustry {
-  EDUCATION
-  HEALTHCARE
-  OIL_GAS
-  METALLURGY
-  TRANSPORT
-  CONSTRUCTION
-  COMMUNICATIONS
-  ENERGY
-  AGRICULTURE
-  TRADE
-  CULTURE
-  SPORT
-  DEFENSE
-  CHEMICAL
-  TEXTILE
-  FOOD
-  FORESTRY
-  MINING
-  MACHINE_BUILDING
-  FINANCE
-  PUBLIC_SERVICE
 }
 
 enum TaskStatus {

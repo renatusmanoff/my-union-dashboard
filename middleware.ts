@@ -7,6 +7,71 @@ const protectedRoutes = [
   '/api/membership/application'
 ];
 
+// Маршруты, которые доступны только супер-администратору
+const superAdminRoutes = [
+  '/dashboard/super-admin',
+  '/api/roles',
+  '/api/permissions'
+];
+
+// Функция для получения прав по роли
+function getRolePermissions(role: string): string[] {
+  const rolePermissions: Record<string, string[]> = {
+    SUPER_ADMIN: [
+      'org_view', 'org_create', 'org_edit', 'org_delete', 'org_manage_hierarchy',
+      'user_view', 'user_create', 'user_edit', 'user_delete', 'user_manage_roles', 'user_validate_membership', 'user_manage_admins',
+      'news_view', 'news_create', 'news_edit', 'news_delete',
+      'doc_view', 'doc_create', 'doc_edit', 'doc_delete', 'doc_sign', 'doc_manage_workflow',
+      'msg_view', 'msg_send', 'msg_create_chat', 'msg_view_all',
+      'discount_view', 'discount_manage',
+      'profile_view', 'profile_edit_own',
+      'report_view', 'report_create',
+      'settings_manage',
+      'admin_full_access', 'admin_roles'
+    ],
+    REGIONAL_CHAIRMAN: [
+      'org_view', 'org_edit', 'org_manage_hierarchy',
+      'user_view', 'user_create', 'user_edit', 'user_delete', 'user_manage_roles', 'user_validate_membership', 'user_manage_admins',
+      'news_view', 'news_create', 'news_edit', 'news_delete',
+      'doc_view', 'doc_create', 'doc_edit', 'doc_sign', 'doc_manage_workflow',
+      'msg_view', 'msg_send', 'msg_create_chat', 'msg_view_all',
+      'discount_view', 'discount_manage',
+      'profile_view', 'profile_edit_own',
+      'report_view', 'report_create',
+      'settings_manage'
+    ],
+    LOCAL_CHAIRMAN: [
+      'org_view', 'org_edit',
+      'user_view', 'user_create', 'user_edit', 'user_delete', 'user_manage_roles', 'user_validate_membership',
+      'news_view', 'news_create', 'news_edit', 'news_delete',
+      'doc_view', 'doc_create', 'doc_edit', 'doc_sign', 'doc_manage_workflow',
+      'msg_view', 'msg_send', 'msg_create_chat', 'msg_view_all',
+      'discount_view', 'discount_manage',
+      'profile_view', 'profile_edit_own',
+      'report_view', 'report_create'
+    ],
+    PRIMARY_CHAIRMAN: [
+      'org_view',
+      'user_view', 'user_create', 'user_edit', 'user_delete', 'user_validate_membership',
+      'news_view', 'news_create', 'news_edit', 'news_delete',
+      'doc_view', 'doc_create', 'doc_edit', 'doc_sign', 'doc_manage_workflow',
+      'msg_view', 'msg_send', 'msg_create_chat', 'msg_view_all',
+      'discount_view', 'discount_manage',
+      'profile_view', 'profile_edit_own',
+      'report_view', 'report_create'
+    ],
+    PRIMARY_MEMBER: [
+      'news_view',
+      'doc_view', 'doc_create', 'doc_sign',
+      'msg_view', 'msg_send', 'msg_create_chat',
+      'discount_view',
+      'profile_view', 'profile_edit_own'
+    ]
+  };
+
+  return rolePermissions[role] || [];
+}
+
 // Публичные API маршруты (не требуют авторизации)
 const publicApiRoutes = [
   '/api/membership/register',
@@ -88,6 +153,23 @@ export async function middleware(request: NextRequest) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
+    }
+
+    // Проверяем доступ к маршрутам супер-администратора
+    const isSuperAdminRoute = superAdminRoutes.some(route => 
+      pathname.startsWith(route)
+    );
+    
+    if (isSuperAdminRoute) {
+      // Для маршрутов супер-администратора проверяем роль через cookie
+      // Это упрощенная проверка без запросов к БД
+      const userRole = request.cookies.get('user-role')?.value;
+      if (userRole !== 'SUPER_ADMIN') {
+        return NextResponse.json(
+          { error: 'Доступ запрещен. Требуются права супер-администратора.' },
+          { status: 403 }
+        );
+      }
     }
   }
   
